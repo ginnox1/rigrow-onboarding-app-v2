@@ -55,11 +55,15 @@ crmRouter.post('/lead', async (req, res) => {
   }
 
   try {
-    await fetch(webhookUrl, {
+    const webhookRes = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(parsed)
     })
+    if (!webhookRes.ok) {
+      console.error('[CRM relay] Webhook returned error status:', webhookRes.status)
+      return res.status(502).json({ error: `Webhook error: ${webhookRes.status}` })
+    }
     res.json({ status: 'relayed' })
   } catch (err) {
     console.error('[CRM relay] Webhook failed:', err.message)

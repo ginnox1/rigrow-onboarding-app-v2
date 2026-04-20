@@ -42,6 +42,7 @@ const strings = {
     agent_denied: 'Access denied. Please contact Rigrow to register as an agent.',
     agent_banner: '👤 Agent: {phone}  ·  Verified {ago}',
     no_connection: 'No connection',
+    invalid_phone: 'Please enter a valid phone number (9 digits)',
     area_too_small: 'Area must be at least 0.5 Ha',
     self_intersection: 'Boundary cannot self-intersect',
     crop_label: 'Crop',

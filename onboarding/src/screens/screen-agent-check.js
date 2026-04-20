@@ -1,5 +1,4 @@
 import { verifyAgent } from '../agent.js'
-import { saveState } from '../storage.js'
 import { t } from '../i18n.js'
 
 const PREFIXES = [
@@ -36,7 +35,7 @@ export async function renderAgentCheck(container, state, navigate) {
     const prefix = container.querySelector('#prefix-select').value
 
     if (!/^\d{9}$/.test(local)) {
-      errorEl.textContent = 'Please enter a valid phone number (9 digits)'
+      errorEl.textContent = t('invalid_phone', lang)
       errorEl.classList.remove('hidden')
       return
     }
@@ -58,7 +57,6 @@ export async function renderAgentCheck(container, state, navigate) {
         container.querySelector('#check-btn').remove()
         return
       }
-      await saveState({ isAgent: true, agentPhone: phone, agentLevel: identity.agentLevel, verifiedAt: identity.verifiedAt })
       navigate('entry')
     } catch {
       errorEl.textContent = t('no_connection', lang)

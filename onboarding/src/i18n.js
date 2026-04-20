@@ -57,6 +57,7 @@ const strings = {
     basic_insights: 'Basic Insights (soil moisture, crop condition)',
     ussd_block: 'Dial {code} for weather insights',
     ussd_coming: 'Dial-in service — coming soon',
+    whatsapp_fallback: "You can return any time to sign up your farm. We'll send updates via WhatsApp.",
   },
   sw: {},
   am: {},

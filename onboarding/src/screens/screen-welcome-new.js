@@ -1,5 +1,6 @@
 import { USSD_CODE, USSD_ENABLED } from '../config.js'
 import { t } from '../i18n.js'
+import { clearFarmerState } from '../storage.js'
 
 export async function renderWelcomeNew(container, state, navigate) {
   const lang = state?.language ?? 'en'
@@ -31,14 +32,14 @@ export async function renderWelcomeNew(container, state, navigate) {
   document.getElementById('yes-signup-btn').addEventListener('click', () => navigate('map'))
 
   document.getElementById('not-now-btn').addEventListener('click', () => {
+    if (container.querySelector('.whatsapp-fallback')) return
     const msg = document.createElement('p')
     msg.className = 'whatsapp-fallback'
-    msg.textContent = "You can return any time to sign up your farm. We'll send updates via WhatsApp."
+    msg.textContent = t('whatsapp_fallback', lang)
     container.querySelector('.screen').appendChild(msg)
   })
 
   document.getElementById('next-farmer-btn')?.addEventListener('click', async () => {
-    const { clearFarmerState } = await import('../storage.js')
     await clearFarmerState()
     navigate('entry')
   })

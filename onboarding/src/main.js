@@ -41,10 +41,14 @@ function renderAgentBanner(state) {
 
   const banner = document.createElement('div')
   banner.id = 'agent-banner'
-  banner.innerHTML = `
-    <span>👤 Agent: ${state.agentPhone} · Verified ${timeAgo(state.verifiedAt)}</span>
-    <button id="agent-sync-btn" title="Re-verify">↻</button>
-  `
+  const span = document.createElement('span')
+  span.textContent = `👤 Agent: ${state.agentPhone} · Verified ${timeAgo(state.verifiedAt)}`
+  const syncBtn = document.createElement('button')
+  syncBtn.id = 'agent-sync-btn'
+  syncBtn.title = 'Re-verify'
+  syncBtn.textContent = '↻'
+  banner.appendChild(span)
+  banner.appendChild(syncBtn)
   document.body.prepend(banner)
   document.getElementById('agent-sync-btn').addEventListener('click', async () => {
     const btn = document.getElementById('agent-sync-btn')

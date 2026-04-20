@@ -50,6 +50,11 @@ export async function renderRegister(container, state, navigate) {
     const name = document.getElementById('name-input')?.value.trim()
     const errorEl = document.getElementById('reg-error')
 
+    if (!state?.phone) {
+      navigate('entry')
+      return
+    }
+
     let region = '', woreda = ''
     if (prefix === '+251') {
       region = document.getElementById('region-select')?.value
@@ -78,8 +83,13 @@ export async function renderRegister(container, state, navigate) {
     errorEl.classList.add('hidden')
 
     const via = state?.agentPhone ?? 'self'
-    await saveState({ name, region, woreda })
-    await postLead({ phone: state.phone, name, region, woreda, language: lang, via })
-    navigate('welcome-new')
+    try {
+      await saveState({ name, region, woreda })
+      await postLead({ phone: state.phone, name, region, woreda, language: lang, via })
+      navigate('welcome-new')
+    } catch (err) {
+      errorEl.classList.remove('hidden')
+      errorEl.textContent = 'Something went wrong. Please try again.'
+    }
   })
 }

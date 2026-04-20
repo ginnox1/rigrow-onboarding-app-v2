@@ -1,0 +1,18 @@
+{
+  "name": "rigrow-onboarding-v2",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev:pwa": "vite --host",
+    "build:pwa": "vite build",
+    "dev:backend": "node --env-file=backend/.env backend/src/index.js"
+  },
+  "dependencies": {
+    "idb": "^8.0.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "vite-plugin-pwa": "^0.19.0"
+  }
+}

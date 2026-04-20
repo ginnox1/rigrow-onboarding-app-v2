@@ -121,6 +121,12 @@ Constants: `PRICING_RATE_BIRR=390`, `USSD_CODE='*384#'`, `USSD_ENABLED=false`, `
 ### userLookup.js
 `normalisePhone(phone)` generates all variants across all 5 country prefixes (ET/KE/UG/TZ/RW) plus local `0XXXXXXXXX` format. Two-step lookup: registry → userId → full config. Caching: 24h for registry, self config full, agent devices stripped (max 100 LRU).
 
+The lookup result drives navigation the same way regardless of whether the caller is a self-service farmer or an agent:
+- Phone **found** → load config into Zustand → navigate to `/home` (farmer's home screen, showing their fields)
+- Phone **not found** → navigate to `/register` (begin new farmer onboarding)
+
+On agent devices, the loaded config is the **stripped** variant (`userId, phoneNr, language, fields[].{id, name, A, registrationType}`). This is sufficient to render the farmer's HomeScreen (field list, Calculator links, Pin/Bound CTAs). The agent sees the farmer's home screen in context and can add fields or navigate the normal flow on the farmer's behalf.
+
 ### crm.js
 Three event types: `new_registration`, `field_request`, `agent_request`. Transport: `no-cors` POST to Apps Script in prod; relay via backend in dev. Offline: queue to IndexedDB `rigrow-crm-queue`, retry on `online` event + Background Sync.
 
@@ -144,8 +150,16 @@ Wraps Mapbox GL JS: `createMap(container, centre)`, `attachDraw(map)`, `calcHect
 - Language toggle: EN / SW / አማ / OM — re-renders UI on tap
 - `PhoneInput`: prefix dropdown (auto-selects by language) + 9-digit numeric input
 - `[Continue]`: combines prefix + digits → E.164 → `fetchUserConfig(phone)` → navigate to `/home` (found) or `/register` (not found)
+  - This lookup behaves identically for self-service users and agents. If an agent enters a farmer's phone and that farmer is registered, the app navigates to `/home` showing the farmer's data from the stripped cached config.
 - `[I am an agent]`: navigate to `/agent-check`
 - Offline + no cache: show "No connection" error
+
+**Boot redirect behaviour:**
+On app boot, `App.jsx` reads persisted Zustand state from IndexedDB:
+- `isRegistered=true` and no active onboarding in progress → redirect to `/home`
+- Active onboarding in progress (e.g. `screen='map'`) → redirect to that screen (preserving all form state so the user does not need to refill anything)
+- Agent identity present → restore agent banner + redirect to `/` (entry, ready to onboard next farmer)
+- No persisted state → stay at `/`
 
 ### RegisterScreen (`/register`)
 - Back → `/`
@@ -203,7 +217,37 @@ Wraps Mapbox GL JS: `createMap(container, centre)`, `attachDraw(map)`, `calcHect
 
 ---
 
-## 8. Shared Components
+## 8. Agent–Farmer Flow (Key Flow)
+
+This flow must work correctly for all agent use cases.
+
+```
+AgentCheckScreen
+  → verified → navigate('/') with isAgent=true, agentBanner shown
+
+EntryScreen (agent mode)
+  → agent enters farmer phone → [Continue]
+    → fetchUserConfig(farmerPhone)
+      → FOUND   → load stripped config into Zustand → navigate('/home')
+                   [Agent sees farmer's home screen: their fields, Calculator links, Pin/Bound CTAs]
+      → NOT FOUND → navigate('/register')
+                   [Agent fills name/region/woreda on farmer's behalf → postLead via=agentPhone]
+
+HomeScreen (agent viewing a farmer)
+  → Agent can add fields (Pin or Bound) just like the farmer would
+  → All CRM events carry via=agentPhone
+
+CompleteScreen / WelcomeNewScreen
+  → [Register Next Farmer] clears farmer state (phone, name, region, woreda, fields, map data)
+    but preserves agent identity (isAgent, agentPhone, agentLevel, verifiedAt)
+  → navigate('/') — ready to onboard the next farmer
+```
+
+**State isolation between farmers:** When `[Register Next Farmer]` is tapped, all farmer-scoped fields are cleared from Zustand and IndexedDB before navigating to `/`. The agent identity fields are never cleared by this action.
+
+---
+
+## 9. Shared Components
 
 ### AgentBanner
 Rendered in `App.jsx` above all screens when `store.isAgent === true`.
@@ -221,7 +265,7 @@ Input: `inputmode="numeric"`, max 9 digits.
 
 ---
 
-## 9. Backend (Dev Only)
+## 10. Backend (Dev Only)
 
 **Express server** on port 3001.
 
@@ -239,7 +283,7 @@ CRM_SHEETS_WEBHOOK_URL=<Apps Script URL>
 
 ---
 
-## 10. Build & Dev Scripts
+## 11. Build & Dev Scripts
 
 ```json
 "scripts": {
@@ -254,7 +298,7 @@ Vite config: `host: true` (LAN access for mobile testing), `vite-plugin-pwa` for
 
 ---
 
-## 11. Environment Variables
+## 12. Environment Variables
 
 | Variable | Dev fallback | Prod value |
 |----------|-------------|------------|
@@ -266,7 +310,7 @@ Vite config: `host: true` (LAN access for mobile testing), `vite-plugin-pwa` for
 
 ---
 
-## 12. Out of Scope (v2+)
+## 13. Out of Scope (v2+)
 
 - USSD live integration (`USSD_ENABLED=false` for now)
 - Kenya county dropdown (47 counties) — text input for now

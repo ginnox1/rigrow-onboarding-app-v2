@@ -70,3 +70,7 @@ export async function saveStrippedConfig(key, value, limit) {
   }
   await db.put('user_config_stripped', value, key)
 }
+
+export async function initDB() {
+  await getDB()
+}

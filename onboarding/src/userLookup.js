@@ -48,14 +48,25 @@ export async function fetchUserConfig(phone) {
 
 export async function fetchUserConfigStripped(phone) {
   const variants = normalisePhone(phone)
+  // Try stripped cache first
   for (const v of variants) {
     const cached = await getStrippedConfig(v)
     if (cached) return cached
   }
 
-  const resp = await fetch(USER_REGISTRY_URL)
-  if (!resp.ok) return null
-  const registry = await resp.json()
+  // Reuse the 24h registry cache (same as fetchUserConfig)
+  const cacheKey = 'user_registry'
+  let registry = await getUserConfig(cacheKey)
+  let registryCachedAt = await getUserConfig(cacheKey + '_cachedAt')
+
+  if (!registry || !registryCachedAt || Date.now() - registryCachedAt > REGISTRY_CACHE_MS) {
+    const resp = await fetch(USER_REGISTRY_URL)
+    if (!resp.ok) return null
+    registry = await resp.json()
+    await saveUserConfig(cacheKey, registry)
+    await saveUserConfig(cacheKey + '_cachedAt', Date.now())
+  }
+
   let userId = null
   for (const v of variants) {
     if (registry[v]) { userId = registry[v]; break }

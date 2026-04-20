@@ -1,5 +1,5 @@
 import { AGENT_REGISTRY_URL, AGENT_VERIFY_TTL_DAYS } from './config.js'
-import { getAgentIdentity, saveAgentIdentity, clearAgentIdentity, saveState, getState } from './storage.js'
+import { getAgentIdentity, saveAgentIdentity, clearAgentIdentity, saveState } from './storage.js'
 import { normalisePhone } from './userLookup.js'
 
 export async function fetchAgentRegistry() {
@@ -24,8 +24,7 @@ export async function verifyAgent(phone) {
 
 export async function revokeAgent() {
   await clearAgentIdentity()
-  const state = await getState()
-  await saveState({ ...state, isAgent: false, agentPhone: null, agentLevel: null, verifiedAt: null })
+  await saveState({ isAgent: false, agentPhone: null, agentLevel: null, verifiedAt: null })
 }
 
 export async function checkAgentTTL(toastFn = () => {}) {

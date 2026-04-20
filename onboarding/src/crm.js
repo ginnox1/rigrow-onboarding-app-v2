@@ -57,14 +57,37 @@ export function postAgentRequest({ phone, name, region, woreda, language, via })
 
 export async function flushQueue() {
   const db = await getQueueDB()
-  const tx = db.transaction(QUEUE_STORE, 'readwrite')
-  const store = tx.objectStore(QUEUE_STORE)
-  const keys = await new Promise(res => { const r = store.getAllKeys(); r.onsuccess = () => res(r.result) })
-  for (const key of keys) {
-    const item = await new Promise(res => { const r = store.get(key); r.onsuccess = () => res(r.result) })
+
+  // Read all queued items first (in their own transaction)
+  const allItems = await new Promise((resolve, reject) => {
+    const tx = db.transaction(QUEUE_STORE, 'readonly')
+    const store = tx.objectStore(QUEUE_STORE)
+    const result = []
+    store.openCursor().onsuccess = function(e) {
+      const cursor = e.target.result
+      if (cursor) {
+        result.push({ key: cursor.key, value: cursor.value })
+        cursor.continue()
+      } else {
+        resolve(result)
+      }
+    }
+    tx.onerror = () => reject(tx.error)
+  })
+
+  // Send each item; delete on success; stop on first failure
+  for (const { key, value } of allItems) {
     try {
-      await sendPayload(item)
-      store.delete(key)
-    } catch { break }
+      await sendPayload(value)
+      // Delete in its own transaction after successful send
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(QUEUE_STORE, 'readwrite')
+        tx.objectStore(QUEUE_STORE).delete(key)
+        tx.oncomplete = resolve
+        tx.onerror = () => reject(tx.error)
+      })
+    } catch {
+      break
+    }
   }
 }

@@ -28,15 +28,19 @@ export async function revokeAgent() {
   await saveState({ ...state, isAgent: false, agentPhone: null, agentLevel: null, verifiedAt: null })
 }
 
-export async function checkAgentTTL() {
+export async function checkAgentTTL(toastFn = () => {}) {
   const identity = await getAgentIdentity()
   if (!identity) return
   const ageMs = Date.now() - new Date(identity.verifiedAt).getTime()
   const ttlMs = AGENT_VERIFY_TTL_DAYS * 24 * 60 * 60 * 1000
-  if (ageMs < ttlMs) return
+  if (ageMs < ttlMs) return  // still valid
 
-  if (!navigator.onLine) return
+  if (!navigator.onLine) {
+    toastFn('Agent verification is overdue. Please reconnect to re-verify.')
+    return
+  }
 
+  // Online + expired: re-verify silently
   const result = await verifyAgent(identity.phone).catch(() => null)
   if (!result) await revokeAgent()
 }

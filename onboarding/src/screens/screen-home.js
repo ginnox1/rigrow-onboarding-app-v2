@@ -29,7 +29,7 @@ export async function renderHome(container, state, navigate) {
           </div>
           <form method="POST" action="https://rigrow-calc.quanomics.com" target="_blank">
             <input type="hidden" name="farm_size" value="${f.A}">
-            <input type="hidden" name="crop" value="${f.name}">
+            <input type="hidden" name="crop" value="${f.crop ?? ''}">
             <button type="submit" class="btn-calc">${t('calculator', lang)}</button>
           </form>
         </div>

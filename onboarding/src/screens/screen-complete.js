@@ -12,7 +12,7 @@ export async function renderComplete(container, state, navigate) {
       <div class="complete-icon">🌱</div>
       <h2>${t('thank_you', lang)}</h2>
       <p>${t('fields_registered', lang, { n: totalFields, type: fieldType })}</p>
-      <button id="download-btn" class="btn-secondary">${t('download_app', lang)}</button>
+      <button id="download-btn" class="btn-secondary" disabled>${t('download_app', lang)} — Coming soon</button>
       <button id="ussd-btn" class="btn-ghost" disabled>${t('ussd_coming_soon', lang)}</button>
       <button id="home-btn" class="btn-primary">${t('back_to_home', lang)}</button>
       ${state?.isAgent ? `<button id="next-farmer-btn" class="btn-secondary">${t('register_next_farmer', lang)}</button>` : ''}

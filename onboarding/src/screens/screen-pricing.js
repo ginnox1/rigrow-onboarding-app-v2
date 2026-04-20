@@ -31,10 +31,19 @@ export async function renderPricing(container, state, navigate) {
     </div>
   `
 
-  document.getElementById('confirm-btn').addEventListener('click', async () => {
+  container.querySelector('#confirm-btn').addEventListener('click', async () => {
+    if (!state?.phone || !state?.fieldMode) {
+      // Missing required state — send user back to start
+      navigate('entry')
+      return
+    }
+    if (!ha || ha < 0.5) {
+      navigate('map')
+      return
+    }
     const via = state?.agentPhone ?? 'self'
-    await saveState({ paymentStatus: 'pending_sms' })
     try {
+      await saveState({ paymentStatus: 'pending_sms' })
       await postFieldRequest({
         phone: state.phone,
         fieldMode: state.fieldMode,
@@ -53,5 +62,5 @@ export async function renderPricing(container, state, navigate) {
     navigate('complete')
   })
 
-  document.getElementById('back-btn').addEventListener('click', () => navigate('map'))
+  container.querySelector('#back-btn').addEventListener('click', () => navigate('map'))
 }

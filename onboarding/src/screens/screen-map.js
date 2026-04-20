@@ -91,8 +91,8 @@ export async function renderMap(container, state, navigate) {
     map.on('draw.update', updateBoundary)
     map.on('draw.delete', () => {
       polygon = null
-      document.getElementById('area-input').value = ''
-      document.getElementById('area-warning').classList.add('hidden')
+      container.querySelector('#area-input').value = ''
+      container.querySelector('#area-warning').classList.add('hidden')
     })
 
     function updateBoundary(e) {
@@ -104,26 +104,26 @@ export async function renderMap(container, state, navigate) {
       }
       polygon = feat
       const ha = calcHectares(feat)
-      document.getElementById('area-input').value = ha.toFixed(2)
-      const warn = document.getElementById('area-warning')
+      container.querySelector('#area-input').value = ha.toFixed(2)
+      const warn = container.querySelector('#area-warning')
       if (ha < MIN_FARM_HA) {
         warn.classList.remove('hidden')
-        document.getElementById('crop-select').disabled = true
-        document.getElementById('date-input').disabled = true
-        document.getElementById('continue-btn').disabled = true
+        container.querySelector('#crop-select').disabled = true
+        container.querySelector('#date-input').disabled = true
+        container.querySelector('#continue-btn').disabled = true
       } else {
         warn.classList.add('hidden')
-        document.getElementById('crop-select').disabled = false
-        document.getElementById('date-input').disabled = false
-        document.getElementById('continue-btn').disabled = false
+        container.querySelector('#crop-select').disabled = false
+        container.querySelector('#date-input').disabled = false
+        container.querySelector('#continue-btn').disabled = false
       }
     }
   }
 
-  document.getElementById('continue-btn').addEventListener('click', async () => {
-    const ha = parseFloat(document.getElementById('area-input').value)
-    const crop = document.getElementById('crop-select').value
-    const plantingDate = document.getElementById('date-input').value
+  container.querySelector('#continue-btn').addEventListener('click', async () => {
+    const ha = parseFloat(container.querySelector('#area-input').value)
+    const crop = container.querySelector('#crop-select').value
+    const plantingDate = container.querySelector('#date-input').value
 
     if (!ha || ha < MIN_FARM_HA || !crop || !plantingDate) {
       showToast('Please complete all fields')
@@ -142,11 +142,11 @@ export async function renderMap(container, state, navigate) {
       gpsCoordsStr = gpsCoords.map(c => `${c[0].toFixed(6)},${c[1].toFixed(6)}`).join(';')
     }
 
-    await saveState({ hectares: ha, crop, plantingDate, gpsCoordsStr, gpsCoords, polygon })
+    await saveState({ hectares: ha, crop, plantingDate, gpsCoordsStr, gpsCoords })
     navigate('pricing')
   })
 
-  document.getElementById('agent-request-btn').addEventListener('click', async () => {
+  container.querySelector('#agent-request-btn').addEventListener('click', async () => {
     const via = state?.agentPhone ?? 'self'
     await postAgentRequest({
       phone: state.phone,

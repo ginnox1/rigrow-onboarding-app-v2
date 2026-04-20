@@ -1,0 +1,95 @@
+:root {
+  --green:      #2e7d32;
+  --green-light:#e8f5e9;
+  --red:        #c62828;
+  --text:       #212121;
+  --muted:      #757575;
+  --border:     #e0e0e0;
+  --radius:     8px;
+  --font:       'Segoe UI', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); color: var(--text); background: #fafafa; }
+
+#app { max-width: 480px; margin: 0 auto; padding: 16px; }
+
+.screen { display: flex; flex-direction: column; gap: 16px; padding-top: 8px; }
+
+/* Buttons */
+.btn-primary   { background: var(--green); color: #fff; border: none; border-radius: var(--radius); padding: 14px; font-size: 1rem; cursor: pointer; width: 100%; }
+.btn-secondary { background: var(--green-light); color: var(--green); border: 1px solid var(--green); border-radius: var(--radius); padding: 12px; font-size: 1rem; cursor: pointer; width: 100%; }
+.btn-ghost     { background: transparent; color: var(--green); border: none; padding: 10px; font-size: 0.9rem; cursor: pointer; text-decoration: underline; }
+.btn-back      { background: none; border: none; color: var(--green); cursor: pointer; font-size: 0.9rem; align-self: flex-start; }
+.btn-calc      { background: var(--green-light); color: var(--green); border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.85rem; cursor: pointer; }
+.btn-download  { display: block; text-align: center; background: var(--green-light); color: var(--green); border: 1px solid var(--green); border-radius: var(--radius); padding: 12px; font-size: 1rem; text-decoration: none; width: 100%; }
+
+/* Inputs */
+input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 1rem; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; color: var(--muted); }
+
+/* Phone row */
+.phone-row { display: flex; gap: 8px; }
+.phone-row select { width: 130px; flex-shrink: 0; }
+.phone-row input  { flex: 1; }
+
+/* Lang toggle */
+.lang-toggle { display: flex; gap: 8px; }
+.lang-btn { border: 1px solid var(--border); background: #fff; border-radius: 4px; padding: 4px 10px; cursor: pointer; }
+.lang-btn.active { background: var(--green); color: #fff; border-color: var(--green); }
+
+/* Logo */
+.logo { font-size: 2rem; font-weight: 700; color: var(--green); text-align: center; padding: 24px 0 8px; }
+
+/* Error */
+.error-text { color: var(--red); font-size: 0.85rem; }
+.hidden { display: none !important; }
+
+/* Agent banner */
+#agent-banner { background: var(--green); color: #fff; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; }
+#agent-sync-btn { background: none; border: none; color: #fff; font-size: 1rem; cursor: pointer; }
+
+/* Toast */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #323232; color: #fff; padding: 12px 24px; border-radius: var(--radius); font-size: 0.9rem; z-index: 9999; }
+
+/* Map */
+#map-container { height: 300px; border-radius: var(--radius); overflow: hidden; }
+.map-form { display: flex; flex-direction: column; gap: 12px; }
+
+/* Field cards */
+.field-card { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
+
+/* Mode cards */
+.mode-cards { display: flex; gap: 16px; }
+.mode-card { flex: 1; padding: 20px; border: 2px solid var(--border); border-radius: var(--radius); text-align: center; cursor: pointer; }
+.mode-card:hover { border-color: var(--green); background: var(--green-light); }
+
+/* Success banner */
+.success-banner { background: var(--green-light); border: 1px solid var(--green); border-radius: var(--radius); padding: 16px; font-size: 1.1rem; font-weight: 600; color: var(--green); }
+
+/* Pricing */
+.price-display { font-size: 1.4rem; text-align: center; padding: 8px 0; }
+.trust-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+
+/* Badge */
+.badge-free { background: var(--green); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; margin-right: 6px; }
+
+/* Complete */
+.complete-icon { font-size: 3rem; text-align: center; }
+
+/* Teaser */
+.teaser { color: var(--muted); font-size: 0.9rem; }
+
+/* USSD */
+.ussd-code { font-size: 1.2rem; font-weight: 600; color: var(--green); }
+.ussd-coming { color: var(--muted); font-style: italic; }
+
+/* WhatsApp fallback */
+.whatsapp-fallback { color: var(--muted); font-size: 0.9rem; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); }
+
+/* CTA group */
+.cta-group { display: flex; flex-direction: column; gap: 10px; }
+
+/* Map cursor */
+.mapboxgl-canvas { cursor: crosshair; }
+.mapboxgl-canvas:active { cursor: grab; }

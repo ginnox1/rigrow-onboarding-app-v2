@@ -58,13 +58,13 @@ function idbPutMapMeta(record) {
     req.onupgradeneeded = e => {
       const db = e.target.result
       if (!db.objectStoreNames.contains('offline_maps')) {
-        db.createObjectStore('offline_maps')
+        db.createObjectStore('offline_maps', { keyPath: 'filename' })
       }
     }
     req.onsuccess = e => {
       const db = e.target.result
       const tx = db.transaction('offline_maps', 'readwrite')
-      const putReq = tx.objectStore('offline_maps').put(record, record.filename)
+      const putReq = tx.objectStore('offline_maps').put(record)
       putReq.onsuccess = () => resolve(record)
       putReq.onerror = () => reject(putReq.error)
       tx.oncomplete = () => db.close()

@@ -16,16 +16,8 @@ const STORE_NAME = 'offline_maps';
 function openDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = e => resolve(e.target.result);
     req.onerror = () => reject(req.error);
-    // If the DB already exists at v2 this won't fire; if somehow it doesn't
-    // exist yet we create the store so this module works standalone.
-    req.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'filename' });
-      }
-    };
   });
 }
 

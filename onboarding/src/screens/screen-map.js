@@ -5,7 +5,7 @@ import { MIN_FARM_HA } from '../config.js'
 import { t } from '../i18n.js'
 import { showToast } from '../main.js'
 import { Protocol, PMTiles } from 'pmtiles'
-import { importPMTiles, listLocalMaps } from '../offlineMap.js'
+import { importPMTiles, listLocalMaps, getMapSource } from '../offlineMap.js'
 
 const CROPS = ['Maize','Wheat','Teff','Barley','Tomato','Onion','Other']
 
@@ -20,6 +20,7 @@ const MAP_CENTRES = {
 }
 
 let pmtilesProtocolRegistered = false
+let _localTileBlobUrl = null
 
 function centreForState(state) {
   const prefix = state?.phonePrefix ?? '+254'
@@ -147,17 +148,27 @@ export async function renderMap(container, state, navigate) {
   })
 
   const centre = centreForState(state)
-  const map = createMap('map-container', centre)
+  let map
+  if (mapSource === 'local') {
+    map = new mapboxgl.Map({
+      container: 'map-container',
+      center: centre,
+      zoom: 14,
+      style: { version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#d8d8d8' } }] }
+    })
+  } else {
+    map = createMap('map-container', centre)
+  }
 
   // Load local PMTiles source if selected
   if (mapSource === 'local' && hasLocal) {
     map.on('load', async () => {
       try {
-        const root = await navigator.storage.getDirectory()
-        const mapsDir = await root.getDirectoryHandle('maps')
-        const fh = await mapsDir.getFileHandle(localMaps[0].filename)
-        const file = await fh.getFile()
+        const file = await getMapSource(localMaps[0].filename)
+        if (!file) { showToast('Local map file not found'); return }
+        if (_localTileBlobUrl) { URL.revokeObjectURL(_localTileBlobUrl); _localTileBlobUrl = null }
         const blobUrl = URL.createObjectURL(file)
+        _localTileBlobUrl = blobUrl
         map.addSource('local-tiles', { type: 'raster', url: `pmtiles://${blobUrl}`, tileSize: 256 })
         map.addLayer({ id: 'local-tiles', type: 'raster', source: 'local-tiles' })
       } catch (err) {

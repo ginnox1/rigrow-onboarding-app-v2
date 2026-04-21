@@ -10,7 +10,7 @@ function getDB() {
       if (!db.objectStoreNames.contains('agent_identity')) db.createObjectStore('agent_identity')
       if (!db.objectStoreNames.contains('user_config'))    db.createObjectStore('user_config')
       if (!db.objectStoreNames.contains('user_config_stripped')) db.createObjectStore('user_config_stripped')
-      if (!db.objectStoreNames.contains('offline_maps'))   db.createObjectStore('offline_maps')
+      if (!db.objectStoreNames.contains('offline_maps'))   db.createObjectStore('offline_maps', { keyPath: 'filename' })
     }
   })
 }

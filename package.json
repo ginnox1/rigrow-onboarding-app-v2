@@ -13,7 +13,8 @@
     "@turf/area": "^7.3.5",
     "@turf/kinks": "^7.3.5",
     "idb": "^8.0.0",
-    "mapbox-gl": "^3.22.0"
+    "mapbox-gl": "^3.22.0",
+    "pmtiles": "^4.4.1"
   },
   "devDependencies": {
     "vite": "^5.0.0",

@@ -4,6 +4,8 @@ import { createMap, attachDraw, calcHectares, hasSelfIntersection, addGreenMarke
 import { MIN_FARM_HA } from '../config.js'
 import { t } from '../i18n.js'
 import { showToast } from '../main.js'
+import { Protocol, PMTiles } from 'pmtiles'
+import { importPMTiles, listLocalMaps } from '../offlineMap.js'
 
 const CROPS = ['Maize','Wheat','Teff','Barley','Tomato','Onion','Other']
 
@@ -16,6 +18,8 @@ const MAP_CENTRES = {
   '+255': [39.2083, -6.7924],
   '+250': [29.8739, -1.9403],
 }
+
+let pmtilesProtocolRegistered = false
 
 function centreForState(state) {
   const prefix = state?.phonePrefix ?? '+254'
@@ -47,8 +51,49 @@ export async function renderMap(container, state, navigate) {
     return
   }
 
+  // Listen for MAP_LOADED postMessage from service worker (Share Target flow)
+  const onMapLoaded = async (event) => {
+    if (event.data?.type === 'MAP_LOADED') {
+      showToast('Map loaded — ready for offline use')
+      await saveState({ mapSource: 'local' })
+      navigator.serviceWorker.removeEventListener('message', onMapLoaded)
+      navigate('map')
+    }
+  }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', onMapLoaded)
+  }
+
+  // Check for local PMTiles
+  const localMaps = await listLocalMaps()
+  const hasLocal = localMaps.length > 0
+
+  // Register PMTiles protocol once
+  if (!pmtilesProtocolRegistered) {
+    const protocol = new Protocol()
+    mapboxgl.addProtocol('pmtiles', protocol.tile.bind(protocol))
+    pmtilesProtocolRegistered = true
+  }
+
+  // Get saved mapSource from state, default to 'online' if no local maps
+  let mapSource = (hasLocal && state?.mapSource === 'local') ? 'local' : 'online'
+
+  // Determine whether to show the file input fallback
+  const shareTargetUnavailable = !(window.matchMedia('(display-mode: standalone)').matches && 'share' in navigator)
+
   container.innerHTML = `
     <div class="screen screen-map">
+      <button class="btn-back">${t('back', lang)}</button>
+      <div id="source-switcher" class="${hasLocal ? '' : 'hidden'}">
+        <button id="btn-online" class="source-btn ${mapSource === 'online' ? 'active' : ''}">🌐 Online Map</button>
+        <button id="btn-local" class="source-btn ${mapSource === 'local' ? 'active' : ''}">📁 Local Map</button>
+      </div>
+      <div id="load-map-file-row" class="${shareTargetUnavailable ? '' : 'hidden'}">
+        <label class="btn-ghost load-map-label">
+          Load map file
+          <input id="load-map-input" type="file" accept=".pmtiles" class="hidden" />
+        </label>
+      </div>
       <div id="map-container"></div>
       <div class="map-form">
         <label>${t('area_label', lang)}
@@ -72,8 +117,55 @@ export async function renderMap(container, state, navigate) {
     </div>
   `
 
+  // Source switcher event listeners
+  if (hasLocal) {
+    container.querySelector('#btn-online').addEventListener('click', async () => {
+      mapSource = 'online'
+      await saveState({ mapSource: 'online' })
+      navigate('map')
+    })
+    container.querySelector('#btn-local').addEventListener('click', async () => {
+      mapSource = 'local'
+      await saveState({ mapSource: 'local' })
+      navigate('map')
+    })
+  }
+
+  // File input event listener (fallback for when Share Target is unavailable)
+  container.querySelector('#load-map-input').addEventListener('change', async e => {
+    const file = e.target.files[0]
+    if (!file) return
+    try {
+      await importPMTiles(file)
+      showToast('Map loaded — ready for offline use')
+      await saveState({ mapSource: 'local' })
+      navigate('map')  // re-render to show switcher
+    } catch (err) {
+      showToast('Failed to load map file')
+      console.error(err)
+    }
+  })
+
   const centre = centreForState(state)
   const map = createMap('map-container', centre)
+
+  // Load local PMTiles source if selected
+  if (mapSource === 'local' && hasLocal) {
+    map.on('load', async () => {
+      try {
+        const root = await navigator.storage.getDirectory()
+        const mapsDir = await root.getDirectoryHandle('maps')
+        const fh = await mapsDir.getFileHandle(localMaps[0].filename)
+        const file = await fh.getFile()
+        const blobUrl = URL.createObjectURL(file)
+        map.addSource('local-tiles', { type: 'raster', url: `pmtiles://${blobUrl}`, tileSize: 256 })
+        map.addLayer({ id: 'local-tiles', type: 'raster', source: 'local-tiles' })
+      } catch (err) {
+        console.error('Failed to load local PMTiles:', err)
+        showToast('Could not load local map')
+      }
+    })
+  }
 
   let pinCoords = null
   let polygon = null

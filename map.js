@@ -5,7 +5,6 @@
  * Mapbox GL JS is loaded via CDN (mapbox-gl.css in index.html) and available
  * as the global `mapboxgl` object — we import it here for tree-shaking.
  */
-import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
 import MapboxDraw from '@mapbox/mapbox-gl-draw';
 import area from '@turf/area';

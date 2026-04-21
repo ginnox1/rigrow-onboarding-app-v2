@@ -8,25 +8,27 @@ const ET_REGIONS = [
   'Southwest Ethiopia Peoples','Tigray','SNNPR'
 ]
 
-function locationFields(prefix, lang) {
+function locationFields(prefix, lang, state) {
+  const savedRegion = state?.region ?? ''
+  const savedWoreda = state?.woreda ?? ''
   if (prefix === '+251') {
     return `
       <label>${t('region_label', lang)}
         <select id="region-select" required>
           <option value="">— Select —</option>
-          ${ET_REGIONS.map(r => `<option value="${r}">${r}</option>`).join('')}
+          ${ET_REGIONS.map(r => `<option value="${r}"${r === savedRegion ? ' selected' : ''}>${r}</option>`).join('')}
         </select>
       </label>
-      <label>${t('woreda_label', lang)}<input id="woreda-input" type="text" required /></label>
+      <label>${t('woreda_label', lang)}<input id="woreda-input" type="text" required value="${savedWoreda}" /></label>
     `
   }
   if (prefix === '+254') {
     return `
-      <label>${t('county_label', lang)}<input id="county-input" type="text" required /></label>
-      <label>${t('sublocation_label', lang)}<input id="sublocation-input" type="text" required /></label>
+      <label>${t('county_label', lang)}<input id="county-input" type="text" required value="${savedRegion}" /></label>
+      <label>${t('sublocation_label', lang)}<input id="sublocation-input" type="text" required value="${savedWoreda}" /></label>
     `
   }
-  return `<label>${t('location_label', lang)}<input id="location-input" type="text" required /></label>`
+  return `<label>${t('location_label', lang)}<input id="location-input" type="text" required value="${savedRegion}" /></label>`
 }
 
 export async function renderRegister(container, state, navigate) {
@@ -37,8 +39,8 @@ export async function renderRegister(container, state, navigate) {
     <div class="screen screen-register">
       <button class="btn-back">${t('back', lang)}</button>
       <h2>${t('tell_us', lang)}</h2>
-      <label>${t('name_label', lang)}<input id="name-input" type="text" required /></label>
-      ${locationFields(prefix, lang)}
+      <label>${t('name_label', lang)}<input id="name-input" type="text" required value="${state?.name ?? ''}" /></label>
+      ${locationFields(prefix, lang, state)}
       <div id="reg-error" class="error-text hidden"></div>
       <button id="register-btn" class="btn-primary">${t('register', lang)}</button>
     </div>
@@ -82,12 +84,17 @@ export async function renderRegister(container, state, navigate) {
     }
     errorEl.classList.add('hidden')
 
+    const btn = document.getElementById('register-btn')
+    btn.disabled = true
+    btn.classList.add('btn-loading')
     const via = state?.agentPhone ?? 'self'
     try {
       await saveState({ name, region, woreda })
       await postLead({ phone: state.phone, name, region, woreda, language: lang, via })
       navigate('welcome-new')
     } catch (err) {
+      btn.classList.remove('btn-loading')
+      btn.disabled = false
       errorEl.classList.remove('hidden')
       errorEl.textContent = 'Something went wrong. Please try again.'
     }

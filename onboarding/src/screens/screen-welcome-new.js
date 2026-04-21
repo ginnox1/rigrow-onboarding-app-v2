@@ -10,9 +10,13 @@ export async function renderWelcomeNew(container, state, navigate) {
 
   container.innerHTML = `
     <div class="screen screen-welcome-new">
-      <div class="success-banner">✅ ${t('youre_registered', lang)}</div>
+      <div class="success-banner">
+        <div class="success-title">✅ ${t('youre_registered', lang)}</div>
+        <div class="success-sub">${t('youre_registered_sub', lang)}</div>
+      </div>
       ${ussdBlock}
-      <a href="#" class="btn-download">${t('download_app', lang)}</a>
+      <p style="font-size:0.9rem;color:var(--muted)">Or download our mobile app</p>
+      <button id="download-app-btn" class="btn-secondary">${t('download_app', lang)}</button>
 
       <hr/>
       <h3>${t('want_farm_advice', lang)}</h3>
@@ -29,6 +33,7 @@ export async function renderWelcomeNew(container, state, navigate) {
     </div>
   `
 
+  document.getElementById('download-app-btn').addEventListener('click', () => navigate('download'))
   document.getElementById('yes-signup-btn').addEventListener('click', () => navigate('map'))
 
   document.getElementById('not-now-btn').addEventListener('click', () => {

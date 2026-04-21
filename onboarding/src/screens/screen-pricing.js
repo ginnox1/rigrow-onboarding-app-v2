@@ -15,12 +15,18 @@ export async function renderPricing(container, state, navigate) {
     ? `<s>${fullAnnual.toLocaleString()} Birr/year</s> <strong>${annual.toLocaleString()} Birr/year</strong>`
     : `<strong>${annual.toLocaleString()} Birr/year</strong>`
 
+  const gpsCoordsStr = state?.gpsCoordsStr ?? ''
+  const gpsLabel = gpsCoordsStr
+    ? `<div class="gps-preview">📍 GPS: <span>${gpsCoordsStr}</span></div>`
+    : ''
+
   container.innerHTML = `
     <div class="screen screen-pricing">
       <h2>${t('precision_plan', lang)}</h2>
       <p>${t('rate_display', lang, { rate: PRICING_RATE_BIRR })}</p>
       <p>${t('annual_total', lang, { ha: ha.toFixed(1), rate: PRICING_RATE_BIRR, total: annual.toLocaleString() })}</p>
       <div class="price-display">${priceDisplay}</div>
+      ${gpsLabel}
       <ul class="trust-list">
         <li>✓ ${t('sms_payment_note', lang)}</li>
         <li>✓ ${t('activation_note', lang)}</li>
@@ -33,7 +39,6 @@ export async function renderPricing(container, state, navigate) {
 
   container.querySelector('#confirm-btn').addEventListener('click', async () => {
     if (!state?.phone || !state?.fieldMode) {
-      // Missing required state — send user back to start
       navigate('entry')
       return
     }
@@ -41,6 +46,13 @@ export async function renderPricing(container, state, navigate) {
       navigate('map')
       return
     }
+    if (!gpsCoordsStr) {
+      navigate('map')
+      return
+    }
+    const btn = container.querySelector('#confirm-btn')
+    btn.disabled = true
+    btn.classList.add('btn-loading')
     const via = state?.agentPhone ?? 'self'
     try {
       await saveState({ paymentStatus: 'pending_sms' })
@@ -53,7 +65,7 @@ export async function renderPricing(container, state, navigate) {
         annualPriceBirr: annual,
         discount,
         paymentStatus: 'pending_sms',
-        gpsCoordsStr: state.gpsCoordsStr ?? '',
+        gpsCoordsStr,
         via
       })
     } catch {

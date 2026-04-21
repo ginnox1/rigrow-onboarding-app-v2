@@ -1,0 +1,78 @@
+// doGet receives all calls from the app (GET + ?data=...).
+// It decodes the payload and delegates to doPost.
+function doGet(e) {
+  try {
+    var data = e.parameter && e.parameter.data ? e.parameter.data : null;
+    if (!data) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ status: 'error', message: 'No data parameter' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    return doPost({ postData: { contents: data } });
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'error', message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doPost(e) {
+  try {
+    var raw = (e.parameter && e.parameter.data) ? e.parameter.data : e.postData.contents;
+    var p  = JSON.parse(raw);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    if (p.event === 'new_registration') {
+      var sh = ss.getSheetByName('Registrations') || ss.insertSheet('Registrations');
+      if (sh.getLastRow() === 0) {
+        sh.appendRow(['Timestamp','Event','Phone','Name','Region','Woreda','Language','Registered Via']);
+      }
+      sh.appendRow([
+        p.timestamp, p.event, p.phone,
+        p.name || '', p.region || '', p.woreda || '', p.language || '',
+        p.via || 'self'
+      ]);
+
+    } else if (p.event === 'field_request') {
+      var fsh = ss.getSheetByName('Field Requests') || ss.insertSheet('Field Requests');
+      if (fsh.getLastRow() === 0) {
+        fsh.appendRow(['Timestamp','Phone','Field Mode','Hectares','Crop','Planting Date','Annual Price (Birr)','Discount','Payment Status','GPS Coords','Registered Via']);
+      }
+      fsh.appendRow([
+        p.timestamp, p.phone,
+        p.fieldMode || '', p.hectares || 0, p.crop || '',
+        p.plantingDate || '', p.annualPriceBirr || 0,
+        p.discount || 0, p.paymentStatus || '',
+        p.gpsCoordsStr || '',
+        p.via || 'self'
+      ]);
+
+    } else if (p.event === 'agent_request') {
+      var ash = ss.getSheetByName('Agent Requests') || ss.insertSheet('Agent Requests');
+      if (ash.getLastRow() === 0) {
+        ash.appendRow(['Timestamp','Phone','Name','Region','Woreda','Registered Via']);
+      }
+      ash.appendRow([
+        p.timestamp, p.phone,
+        p.name || '', p.region || '', p.woreda || '',
+        p.via || 'self'
+      ]);
+
+    } else if (p.event === 'app_download_view') {
+      var dsh = ss.getSheetByName('APK Downloads') || ss.insertSheet('APK Downloads');
+      if (dsh.getLastRow() === 0) {
+        dsh.appendRow(['Timestamp','Phone']);
+      }
+      dsh.appendRow([p.timestamp, p.phone || '']);
+    }
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'ok' }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: 'error', message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}

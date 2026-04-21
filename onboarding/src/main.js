@@ -1,6 +1,6 @@
 import { getState, saveState } from './storage.js'
 import { checkAgentTTL, timeAgo, verifyAgent, revokeAgent } from './agent.js'
-import { flushQueue } from './crm.js'
+import { flushQueue, clearQueue } from './crm.js'
 
 import { renderEntry }      from './screens/screen0-entry.js'
 import { renderRegister }   from './screens/screen-register.js'
@@ -10,6 +10,8 @@ import { renderMap }        from './screens/screen-map.js'
 import { renderPricing }    from './screens/screen-pricing.js'
 import { renderComplete }   from './screens/screen-complete.js'
 import { renderAgentCheck } from './screens/screen-agent-check.js'
+import { renderAgentSent }  from './screens/screen-agent-sent.js'
+import { renderDownload }   from './screens/screen-download.js'
 
 const SCREENS = {
   entry:         renderEntry,
@@ -20,6 +22,8 @@ const SCREENS = {
   pricing:       renderPricing,
   complete:      renderComplete,
   'agent-check': renderAgentCheck,
+  'agent-sent':  renderAgentSent,
+  download:      renderDownload,
 }
 
 const app = document.getElementById('app')
@@ -74,10 +78,41 @@ export function showToast(msg, duration = 3000) {
   setTimeout(() => t.remove(), duration)
 }
 
+const THEME_KEY = 'rigrow-theme'
+const THEME_CYCLE = { light: 'dark', dark: 'high-contrast', 'high-contrast': 'light' }
+const THEME_LABEL = { light: '☀', dark: '🌙', 'high-contrast': '◑' }
+
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY) ?? 'light'
+  document.documentElement.dataset.theme = saved
+
+  if (document.getElementById('theme-toggle')) return
+  const btn = document.createElement('button')
+  btn.id = 'theme-toggle'
+  btn.title = 'Switch theme'
+  btn.textContent = THEME_LABEL[saved]
+  btn.addEventListener('click', () => {
+    const current = document.documentElement.dataset.theme ?? 'light'
+    const next = THEME_CYCLE[current] ?? 'light'
+    document.documentElement.dataset.theme = next
+    localStorage.setItem(THEME_KEY, next)
+    btn.textContent = THEME_LABEL[next]
+  })
+  document.body.appendChild(btn)
+}
+
+const QUEUE_PURGE_KEY = 'queuePurgedV2'
+
 async function boot() {
+  initTheme()
   await checkAgentTTL(showToast).catch(() => {})
-  if (navigator.onLine) flushQueue().catch(() => {})
   const state = await getState()
+  if (!state?.[QUEUE_PURGE_KEY]) {
+    await clearQueue().catch(() => {})
+    await saveState({ [QUEUE_PURGE_KEY]: true })
+  } else if (navigator.onLine) {
+    flushQueue().catch(() => {})
+  }
   const screen = state?.screen ?? 'entry'
   navigate(screen)
 }

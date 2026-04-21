@@ -65,15 +65,18 @@ export async function renderMap(container, state, navigate) {
     navigator.serviceWorker.addEventListener('message', onMapLoaded)
   }
 
-  // Check for local PMTiles
-  const localMaps = await listLocalMaps()
+  // Check for local PMTiles (safe — never blocks map render)
+  let localMaps = []
+  try { localMaps = await listLocalMaps() } catch (_) {}
   const hasLocal = localMaps.length > 0
 
   // Register PMTiles protocol once
   if (!pmtilesProtocolRegistered) {
-    const protocol = new Protocol()
-    mapboxgl.addProtocol('pmtiles', protocol.tile.bind(protocol))
-    pmtilesProtocolRegistered = true
+    try {
+      const protocol = new Protocol()
+      mapboxgl.addProtocol('pmtiles', protocol.tile.bind(protocol))
+      pmtilesProtocolRegistered = true
+    } catch (_) {}
   }
 
   // Get saved mapSource from state, default to 'online' if no local maps
@@ -82,9 +85,22 @@ export async function renderMap(container, state, navigate) {
   // Determine whether to show the file input fallback
   const shareTargetUnavailable = !(window.matchMedia('(display-mode: standalone)').matches && 'share' in navigator)
 
+  // Date range: 3 months ago → 1 month ahead
+  function toDateStr(d) { return d.toISOString().slice(0, 10) }
+  const today = new Date()
+  const minDate = new Date(today); minDate.setMonth(minDate.getMonth() - 3)
+  const maxDate = new Date(today); maxDate.setMonth(maxDate.getMonth() + 1)
+
+  // Restore crop — detect if previously entered value was a custom 'other' crop
+  const STD_CROPS = ['maize','wheat','teff','barley','tomato','onion']
+  const savedCrop = state?.crop ?? ''
+  const isStdCrop = STD_CROPS.includes(savedCrop.toLowerCase())
+  const restoredSelect = isStdCrop ? savedCrop.toLowerCase() : (savedCrop ? 'other' : '')
+  const restoredOther  = isStdCrop ? '' : savedCrop
+
   container.innerHTML = `
     <div class="screen screen-map">
-      <button class="btn-back">${t('back', lang)}</button>
+      <button class="btn-back" id="map-back-btn">← Change method</button>
       <div id="source-switcher" class="${hasLocal ? '' : 'hidden'}">
         <button id="btn-online" class="source-btn ${mapSource === 'online' ? 'active' : ''}">🌐 Online Map</button>
         <button id="btn-local" class="source-btn ${mapSource === 'local' ? 'active' : ''}">📁 Local Map</button>
@@ -97,26 +113,38 @@ export async function renderMap(container, state, navigate) {
       </div>
       <div id="map-container"></div>
       <div class="map-form">
-        <label>${t('area_label', lang)}
+        <label>Field Area, Ha (Must be ≥ 0.5 Ha)
           <input id="area-input" type="number" min="0.5" step="0.1"
             ${fieldMode === 'boundary' ? 'readonly' : ''}
-            placeholder="Ha" />
+            placeholder="Ha"
+            value="${fieldMode === 'pin' && state?.hectares ? state.hectares : ''}" />
         </label>
         <div id="area-warning" class="error-text hidden">${t('area_too_small', lang)}</div>
         <label>${t('crop_label', lang)}
           <select id="crop-select">
             <option value="">— Select —</option>
-            ${CROPS.map(c => `<option value="${c.toLowerCase()}">${c}</option>`).join('')}
+            ${CROPS.map(c => `<option value="${c.toLowerCase()}"${c.toLowerCase() === restoredSelect ? ' selected' : ''}>${c}</option>`).join('')}
           </select>
         </label>
-        <label>${t('planting_date_label', lang)}
-          <input id="date-input" type="date" />
+        <div id="other-crop-group" class="${restoredSelect === 'other' ? '' : 'hidden'}">
+          <label>Crop name<input id="other-crop-input" type="text" placeholder="Enter crop name" value="${restoredOther}" /></label>
+        </div>
+        <label>Planting Date (up to 3 months ago, or 1 month ahead)
+          <input id="date-input" type="date"
+            min="${toDateStr(minDate)}" max="${toDateStr(maxDate)}"
+            value="${state?.plantingDate ?? ''}" />
         </label>
-        <button id="continue-btn" class="btn-primary">${t('continue', lang)}</button>
+        <div id="map-hint" class="hint-text"></div>
+        <button id="continue-btn" class="btn-primary" disabled>${t('continue', lang)}</button>
         <button id="agent-request-btn" class="btn-ghost">${t('request_agent', lang)}</button>
       </div>
     </div>
   `
+
+  container.querySelector('#map-back-btn').addEventListener('click', async () => {
+    await saveState({ fieldMode: null })
+    navigate('map')
+  })
 
   // Source switcher event listeners
   if (hasLocal) {
@@ -140,12 +168,14 @@ export async function renderMap(container, state, navigate) {
       await importPMTiles(file)
       showToast('Map loaded — ready for offline use')
       await saveState({ mapSource: 'local' })
-      navigate('map')  // re-render to show switcher
+      navigate('map')
     } catch (err) {
       showToast('Failed to load map file')
       console.error(err)
     }
   })
+
+  await saveState({ gpsCoordsStr: null, gpsCoords: null })
 
   const centre = centreForState(state)
   let map
@@ -182,11 +212,24 @@ export async function renderMap(container, state, navigate) {
   let polygon = null
   let currentMarker = null
 
+  // Restore previous pin position when navigating back
+  if (fieldMode === 'pin' && state?.gpsCoords?.length) {
+    const [lng, lat] = state.gpsCoords[0]
+    pinCoords = { lat, lng }
+    const restoreMarker = () => {
+      currentMarker = addGreenMarker(map, [lng, lat])
+      checkReady()
+    }
+    if (map.loaded()) restoreMarker()
+    else map.once('load', restoreMarker)
+  }
+
   if (fieldMode === 'pin') {
     map.on('click', e => {
       pinCoords = { lat: e.lngLat.lat, lng: e.lngLat.lng }
       if (currentMarker) currentMarker.remove()
       currentMarker = addGreenMarker(map, [e.lngLat.lng, e.lngLat.lat])
+      checkReady()
     })
   } else {
     const draw = attachDraw(map)
@@ -196,6 +239,7 @@ export async function renderMap(container, state, navigate) {
       polygon = null
       container.querySelector('#area-input').value = ''
       container.querySelector('#area-warning').classList.add('hidden')
+      checkReady()
     })
 
     function updateBoundary(e) {
@@ -211,27 +255,56 @@ export async function renderMap(container, state, navigate) {
       const warn = container.querySelector('#area-warning')
       if (ha < MIN_FARM_HA) {
         warn.classList.remove('hidden')
-        container.querySelector('#crop-select').disabled = true
-        container.querySelector('#date-input').disabled = true
-        container.querySelector('#continue-btn').disabled = true
       } else {
         warn.classList.add('hidden')
-        container.querySelector('#crop-select').disabled = false
-        container.querySelector('#date-input').disabled = false
-        container.querySelector('#continue-btn').disabled = false
       }
+      checkReady()
     }
   }
 
+  function checkReady() {
+    const ha = parseFloat(container.querySelector('#area-input').value)
+    const cropSelect = container.querySelector('#crop-select').value
+    const otherCropVal = container.querySelector('#other-crop-input').value.trim()
+    const plantingDate = container.querySelector('#date-input').value
+    let hint = ''
+    if (fieldMode === 'pin') {
+      if (!pinCoords) hint = 'Drop a pin on the map to continue'
+    } else {
+      if (!polygon) hint = 'Draw your farm boundary to continue'
+    }
+    if (!hint && (!ha || ha < MIN_FARM_HA)) hint = `Farm area must be at least ${MIN_FARM_HA} Ha`
+    if (!hint && !cropSelect) hint = 'Select a crop'
+    if (!hint && cropSelect === 'other' && !otherCropVal) hint = 'Enter the crop name'
+    if (!hint && !plantingDate) hint = 'Select a planting date'
+    container.querySelector('#map-hint').textContent = hint
+    container.querySelector('#continue-btn').disabled = hint !== ''
+    return hint
+  }
+
+  container.querySelector('#crop-select').addEventListener('change', e => {
+    const otherGroup = container.querySelector('#other-crop-group')
+    if (e.target.value === 'other') {
+      otherGroup.classList.remove('hidden')
+    } else {
+      otherGroup.classList.add('hidden')
+    }
+    checkReady()
+  })
+
+  container.addEventListener('input', e => {
+    if (['other-crop-input', 'area-input', 'date-input'].includes(e.target.id)) checkReady()
+  })
+
+  // Evaluate pre-filled values immediately so the Continue button state is correct on load
+  checkReady()
+
   container.querySelector('#continue-btn').addEventListener('click', async () => {
     const ha = parseFloat(container.querySelector('#area-input').value)
-    const crop = container.querySelector('#crop-select').value
+    const cropSelect = container.querySelector('#crop-select').value
+    const otherCropVal = container.querySelector('#other-crop-input').value.trim()
+    const crop = cropSelect === 'other' ? otherCropVal : cropSelect
     const plantingDate = container.querySelector('#date-input').value
-
-    if (!ha || ha < MIN_FARM_HA || !crop || !plantingDate) {
-      showToast('Please complete all fields')
-      return
-    }
 
     let gpsCoordsStr = ''
     let gpsCoords = []
@@ -250,6 +323,9 @@ export async function renderMap(container, state, navigate) {
   })
 
   container.querySelector('#agent-request-btn').addEventListener('click', async () => {
+    const btn = container.querySelector('#agent-request-btn')
+    btn.disabled = true
+    btn.classList.add('btn-loading')
     const via = state?.agentPhone ?? 'self'
     await postAgentRequest({
       phone: state.phone,
@@ -259,7 +335,6 @@ export async function renderMap(container, state, navigate) {
       language: lang,
       via
     })
-    showToast(t('agent_requested', lang))
-    navigate('pricing')
+    navigate('agent-sent')
   })
 }

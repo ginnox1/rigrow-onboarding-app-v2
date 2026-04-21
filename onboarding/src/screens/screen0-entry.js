@@ -20,7 +20,7 @@ export async function renderEntry(container, state, navigate) {
 
   container.innerHTML = `
     <div class="screen screen-entry">
-      <div class="logo">Rigrow</div>
+      <img src="/assets/logo.png" alt="Rigrow" class="logo-img" />
       <div class="lang-toggle">
         ${LANGUAGES.map(l => `<button class="lang-btn${l.code === lang ? ' active' : ''}" data-lang="${l.code}">${l.label}</button>`).join('')}
       </div>
@@ -31,10 +31,18 @@ export async function renderEntry(container, state, navigate) {
         <input id="phone-input" type="tel" inputmode="numeric" placeholder="9-digit number" maxlength="9" value="${state?.localPhone ?? ''}" />
       </div>
       <div id="phone-error" class="error-text hidden"></div>
-      <button id="continue-btn" class="btn-primary">${t('continue', lang)}</button>
+      <button id="continue-btn" class="btn-primary" disabled>${t('continue', lang)}</button>
       <button id="agent-btn" class="btn-ghost">${t('i_am_agent', lang)}</button>
     </div>
   `
+
+  const phoneInput = container.querySelector('#phone-input')
+  const continueBtn = container.querySelector('#continue-btn')
+  function updateContinueBtn() {
+    continueBtn.disabled = !/^\d{9}$/.test(phoneInput.value.trim())
+  }
+  phoneInput.addEventListener('input', updateContinueBtn)
+  updateContinueBtn()
 
   container.querySelectorAll('.lang-btn').forEach(btn => {
     btn.addEventListener('click', async () => {

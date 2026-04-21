@@ -24,10 +24,16 @@ async function enqueue(payload) {
 
 async function sendPayload(payload) {
   const isAppsScript = CRM_WEBHOOK_URL.includes('script.google.com')
-  const opts = isAppsScript
-    ? { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
-    : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
-  await fetch(CRM_WEBHOOK_URL, opts)
+  if (isAppsScript) {
+    const url = CRM_WEBHOOK_URL + '?data=' + encodeURIComponent(JSON.stringify(payload))
+    await fetch(url, { mode: 'no-cors' })
+  } else {
+    await fetch(CRM_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+  }
 }
 
 async function postEvent(payload) {
@@ -53,6 +59,20 @@ export function postFieldRequest({ phone, fieldMode, hectares, crop, plantingDat
 
 export function postAgentRequest({ phone, name, region, woreda, language, via }) {
   return postEvent({ event: 'agent_request', phone, name, region, woreda, language, via })
+}
+
+export function postDownloadView({ phone }) {
+  return postEvent({ event: 'app_download_view', phone })
+}
+
+export async function clearQueue() {
+  const db = await getQueueDB()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(QUEUE_STORE, 'readwrite')
+    tx.objectStore(QUEUE_STORE).clear()
+    tx.oncomplete = resolve
+    tx.onerror = () => reject(tx.error)
+  })
 }
 
 export async function flushQueue() {

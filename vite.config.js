@@ -3,6 +3,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   root: 'onboarding',
+  envDir: '..',
   build: { outDir: '../dist/onboarding', emptyOutDir: true },
   server: { host: true, fs: { allow: ['..'] } },
   plugins: [

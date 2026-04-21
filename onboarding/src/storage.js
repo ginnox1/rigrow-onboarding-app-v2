@@ -1,7 +1,7 @@
 import { openDB } from 'idb'
 
 const DB_NAME = 'rigrow-v2'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 function getDB() {
   return openDB(DB_NAME, DB_VERSION, {
@@ -10,6 +10,7 @@ function getDB() {
       if (!db.objectStoreNames.contains('agent_identity')) db.createObjectStore('agent_identity')
       if (!db.objectStoreNames.contains('user_config'))    db.createObjectStore('user_config')
       if (!db.objectStoreNames.contains('user_config_stripped')) db.createObjectStore('user_config_stripped')
+      if (!db.objectStoreNames.contains('offline_maps'))   db.createObjectStore('offline_maps')
     }
   })
 }

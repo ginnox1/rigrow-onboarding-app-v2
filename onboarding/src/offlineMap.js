@@ -34,9 +34,10 @@ async function idbPut(record) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const req = tx.objectStore(STORE_NAME).put(record);
-    tx.oncomplete = () => { db.close(); resolve(record); };
-    tx.onerror = () => { db.close(); reject(tx.error); };
+    req.onsuccess = () => resolve(record);
     req.onerror = () => reject(req.error);
+    tx.oncomplete = () => db.close();
+    tx.onerror = () => { db.close(); reject(tx.error); };
   });
 }
 
@@ -45,9 +46,10 @@ async function idbGetAll() {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
     const req = tx.objectStore(STORE_NAME).getAll();
-    tx.oncomplete = () => { db.close(); resolve(req.result); };
-    tx.onerror = () => { db.close(); reject(tx.error); };
+    req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
+    tx.oncomplete = () => db.close();
+    tx.onerror = () => { db.close(); reject(tx.error); };
   });
 }
 
@@ -56,9 +58,10 @@ async function idbDelete(key) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const req = tx.objectStore(STORE_NAME).delete(key);
-    tx.oncomplete = () => { db.close(); resolve(); };
-    tx.onerror = () => { db.close(); reject(tx.error); };
+    req.onsuccess = () => resolve();
     req.onerror = () => reject(req.error);
+    tx.oncomplete = () => db.close();
+    tx.onerror = () => { db.close(); reject(tx.error); };
   });
 }
 

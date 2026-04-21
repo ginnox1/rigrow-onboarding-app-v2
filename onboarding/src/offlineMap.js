@@ -29,32 +29,35 @@ function openDB() {
   });
 }
 
-function idbPut(db, record) {
+async function idbPut(record) {
+  const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    const req = store.put(record);
-    req.onsuccess = () => resolve(req.result);
+    const req = tx.objectStore(STORE_NAME).put(record);
+    tx.oncomplete = () => { db.close(); resolve(record); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
     req.onerror = () => reject(req.error);
   });
 }
 
-function idbGetAll(db) {
+async function idbGetAll() {
+  const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
-    const store = tx.objectStore(STORE_NAME);
-    const req = store.getAll();
-    req.onsuccess = () => resolve(req.result);
+    const req = tx.objectStore(STORE_NAME).getAll();
+    tx.oncomplete = () => { db.close(); resolve(req.result); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
     req.onerror = () => reject(req.error);
   });
 }
 
-function idbDelete(db, key) {
+async function idbDelete(key) {
+  const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    const req = store.delete(key);
-    req.onsuccess = () => resolve();
+    const req = tx.objectStore(STORE_NAME).delete(key);
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
     req.onerror = () => reject(req.error);
   });
 }
@@ -78,29 +81,38 @@ async function getMapsDir(create = true) {
  * @returns {Promise<{ regionId: string, filename: string, importedAt: string, sizeBytes: number }>}
  */
 export async function importPMTiles(file) {
-  // 1. Write to OPFS
-  const mapsDir = await getMapsDir(true);
-  const fileHandle = await mapsDir.getFileHandle(file.name, { create: true });
-  const writable = await fileHandle.createWritable();
-  const buffer = await file.arrayBuffer();
-  await writable.write(buffer);
-  await writable.close();
+  try {
+    // 1. Write to OPFS
+    const mapsDir = await getMapsDir(true);
+    const fileHandle = await mapsDir.getFileHandle(file.name, { create: true });
+    const writable = await fileHandle.createWritable();
+    const buffer = await file.arrayBuffer();
+    await writable.write(buffer);
+    await writable.close();
 
-  // 2. Build metadata
-  const filenameWithoutExt = file.name.replace(/\.[^.]+$/, '');
-  const metadata = {
-    regionId: filenameWithoutExt,
-    filename: file.name,
-    importedAt: new Date().toISOString(),
-    sizeBytes: file.size,
-  };
+    // 2. Build metadata
+    const filenameWithoutExt = file.name.replace(/\.[^.]+$/, '');
+    const metadata = {
+      regionId: filenameWithoutExt,
+      filename: file.name,
+      importedAt: new Date().toISOString(),
+      sizeBytes: file.size,
+    };
 
-  // 3. Save metadata to IDB
-  const db = await openDB();
-  await idbPut(db, metadata);
-  db.close();
+    // 3. Save metadata to IDB
+    await idbPut(metadata);
 
-  return metadata;
+    return metadata;
+  } catch (err) {
+    // Best-effort cleanup of partial OPFS file
+    try {
+      const mapsDir = await getMapsDir(false);
+      await mapsDir.removeEntry(file.name);
+    } catch {
+      // Swallow cleanup errors
+    }
+    throw err;
+  }
 }
 
 /**
@@ -109,10 +121,7 @@ export async function importPMTiles(file) {
  */
 export async function listLocalMaps() {
   try {
-    const db = await openDB();
-    const records = await idbGetAll(db);
-    db.close();
-    return records;
+    return await idbGetAll();
   } catch {
     return [];
   }
@@ -132,9 +141,7 @@ export async function deleteLocalMap(filename) {
   }
 
   // Remove from IDB
-  const db = await openDB();
-  await idbDelete(db, filename);
-  db.close();
+  await idbDelete(filename);
 }
 
 /**

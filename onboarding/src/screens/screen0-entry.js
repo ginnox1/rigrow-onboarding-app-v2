@@ -75,7 +75,7 @@ export async function renderEntry(container, state, navigate) {
     }
 
     try {
-      const userConfig = await fetchUserConfig(phone)
+      const userConfig = await fetchUserConfig(phone, true)
       if (userConfig) {
         await saveState({ userConfig, isRegistered: true, name: userConfig.name })
         navigate('home')

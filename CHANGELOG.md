@@ -4,6 +4,64 @@ All notable changes to the Rigrow Onboarding App.
 
 ---
 
+## [Unreleased] — 2026-04-27
+
+### Added — GitHub data source, home screen fields, per-country pricing, map UX
+
+#### Data source — GitHub (`user_registry.json` + `user_config.json`)
+
+- `config.js` — all three data URLs now default to `https://raw.githubusercontent.com/ginnox1/rigrow-data/main/user-data/`. A shared `GITHUB_DATA_BASE` constant drives all three. `||` guards replace `??` to handle empty-string env vars correctly. `AGENT_REGISTRY_URL` no longer uses a fragile string-replace on the registry URL.
+- `userLookup.js` — fetch path changed from `BASE_URL/{userId}.json` → `BASE_URL/{userId}/user_config.json` matching the GitHub repo layout. `fetchUserConfig` accepts a `forceRefresh` flag that bypasses both the registry and config IDB caches. Offline fallback: if a network fetch fails but IDB has cached data, the cache is returned. Registry cache is invalidated automatically when `USER_REGISTRY_URL` changes (stored as `user_registry_url` in IDB).
+- `screen0-entry.js` — login always calls `fetchUserConfig(phone, true)` (force-refresh) so live GitHub data is always fetched on login, preventing stale IDB registry from hiding registered users.
+- `onboarding/public/docs/58130/user_config.json` — local dev test file at new path structure.
+- `.env` — `VITE_USER_CONFIG_BASE_URL` uncommented and set to the correct GitHub URL; `VITE_USER_REGISTRY_URL` / `VITE_AGENT_REGISTRY_URL` already correct.
+
+#### Home screen — field list, calculator, background refresh
+
+- `screen-home.js` — rewritten with an inner `render(userConfig)` function. On every load the screen renders immediately from IDB-cached state, then fires `fetchUserConfig(phone, true)` in the background; if fresh data arrives the screen re-renders. Pending (optimistic) fields not yet confirmed by the server are preserved across refreshes by matching crop name + area (±0.15 Ha).
+- Calculator button changed from `<form method="POST">` to `<a href="…" target="_blank">` with GET params: `?hectares={A}&crop={crop}`.
+- `cropFromName(name)` helper extracts the crop from the last space-separated word, then strips any hyphen-prefix (`"E4-Tomato"` → `"Tomato"`, `"E4 Onion"` → `"Onion"`). Used for both the calculator link and pending-field deduplication.
+- CTA simplified: single `+ Add a Farm` button replaces the old pin/bound/add-another logic. Clears `fieldMode` before navigating to `map` so mode selection always shows.
+
+#### Per-country pricing
+
+- `config.js` — `PRICING_RATE_BIRR` removed; replaced by `COUNTRY_PRICING` map: `{ prefix: { rate, currency } }`. Rate sourced from `VITE_PRICE_{CCY}` env vars; `null` if blank (service not available).
+- `pricing.js` — `calcAnnualBirr(ha, rate, discount)` and `calcMonthlyBirr(ha, rate)` now accept `rate` as a parameter instead of reading a global.
+- `screen-pricing.js` — reads `COUNTRY_PRICING[phonePrefix]` for rate + currency; price display uses the correct currency symbol. `currency` now included in the `postFieldRequest` call.
+- `crm.js` — `postFieldRequest` destructures and forwards `currency`.
+- `docs/google_sheet_script` — `Field Requests` header updated: "Annual Price (Birr)" → "Annual Price" + new "Currency" column.
+- `.env` — `VITE_PRICE_ETB=390`; other country prices left blank (coming soon).
+
+#### Map screen — mode selection redesign
+
+- Mode selection (`fieldMode === null`) fully redesigned:
+  - Cards stacked vertically (better mobile readability).
+  - **Pin card**: green "Free" badge + three bullet benefits (weather, soil, calculator savings).
+  - **Boundary card**: amber `{currency} {rate} / Ha / month` badge when available; grey "Coming Soon" badge when `VITE_PRICE_{CCY}` is blank. Clicking "Coming Soon" reveals an inline not-available message with a back button.
+  - If any existing field has `registrationType === 'boundary'`, Pin card is hidden entirely and a hint explains why only boundary is offered.
+  - `← Back` button added, navigates to `home`.
+- `main.css` — mode card styles updated: `flex-direction: column`, `.mode-badge-free/paid/soon`, `.mode-features` bullet list, `.mode-card-unavailable` opacity, `.info-box` for not-available message.
+
+#### Map screen — field prefix input
+
+- Optional "Field ID" text input (max 10 chars) added in a side-by-side row with the crop select. Placeholder: `e.g. E4`.
+- Continue handler combines them: prefix `"E4"` + crop `"tomato"` → `crop = "E4-tomato"` sent to CRM.
+- State saves both `cropName` (pure crop) and `cropPrefix` separately; `crop` holds the combined value. Restores both on back-navigation.
+- Old hint text in the "other" crop group removed; replaced with a single hint below the prefix row.
+
+#### Completion screen — optimistic field append
+
+- `screen-complete.js` — "View My Fields →" button (primary, moved to top) builds a `{ id: 'pending-…', name: crop, A: hectares, registrationType: fieldMode, pending: true }` field from current state and appends it to `state.userConfig.fields` in IDB before navigating home.
+- Home screen field cards: pending fields shown with dashed border and "Syncing…" badge. Calculator link works immediately (crop + Ha already known).
+
+#### CRM fixes
+
+- **Pin mode was sending nothing to CRM** — skipping the pricing screen also skipped the only `postFieldRequest` call. Fixed in `screen-map.js`: pin mode now calls `postFieldRequest({ …, annualPriceBirr: 0, paymentStatus: 'free' })` before navigating to complete.
+- Pin mode navigates directly to `complete`, bypassing the pricing screen (no payment for pins).
+- `crm.js` `postFieldRequest` now destructures and forwards `currency`; GAS `Field Requests` header updated with `Currency` column between Annual Price and Discount. GAS redeploy required.
+
+---
+
 ## [Unreleased] — 2026-04-21
 
 ### Added — Offline Map Tiles (PMTiles, Section 10)

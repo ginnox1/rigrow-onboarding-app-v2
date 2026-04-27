@@ -103,8 +103,20 @@ function initTheme() {
 
 const QUEUE_PURGE_KEY = 'queuePurgedV2'
 
+function initFooter() {
+  if (document.getElementById('app-footer')) return
+  const footer = document.createElement('footer')
+  footer.id = 'app-footer'
+  footer.innerHTML =
+    `Rigrow Onboarding v${__APP_VERSION__} &nbsp;·&nbsp; ` +
+    `&copy; Rigrow PLC, 2026 &nbsp;·&nbsp; ` +
+    `<a href="https://rigrow.quanomics.com" target="_blank" rel="noopener">rigrow.quanomics.com</a>`
+  document.body.appendChild(footer)
+}
+
 async function boot() {
   initTheme()
+  initFooter()
   await checkAgentTTL(showToast).catch(() => {})
   const state = await getState()
   if (!state?.[QUEUE_PURGE_KEY]) {

@@ -36,13 +36,13 @@ function doPost(e) {
     } else if (p.event === 'field_request') {
       var fsh = ss.getSheetByName('Field Requests') || ss.insertSheet('Field Requests');
       if (fsh.getLastRow() === 0) {
-        fsh.appendRow(['Timestamp','Phone','Field Mode','Hectares','Crop','Planting Date','Annual Price (Birr)','Discount','Payment Status','GPS Coords','Registered Via']);
+        fsh.appendRow(['Timestamp','Phone','Field Mode','Hectares','Crop','Planting Date','Annual Price','Currency','Discount','Payment Status','GPS Coords','Registered Via']);
       }
       fsh.appendRow([
         p.timestamp, p.phone,
         p.fieldMode || '', p.hectares || 0, p.crop || '',
         p.plantingDate || '', p.annualPriceBirr || 0,
-        p.discount || 0, p.paymentStatus || '',
+        p.currency || '', p.discount || 0, p.paymentStatus || '',
         p.gpsCoordsStr || '',
         p.via || 'self'
       ]);

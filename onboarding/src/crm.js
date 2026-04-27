@@ -53,8 +53,8 @@ export function postLead({ phone, name, region, woreda, language, via }) {
   return postEvent({ event: 'new_registration', phone, name, region, woreda, language, via })
 }
 
-export function postFieldRequest({ phone, fieldMode, hectares, crop, plantingDate, annualPriceBirr, discount, paymentStatus, gpsCoordsStr, via }) {
-  return postEvent({ event: 'field_request', phone, fieldMode, hectares, crop, plantingDate, annualPriceBirr, discount, paymentStatus, gpsCoordsStr, via })
+export function postFieldRequest({ phone, fieldMode, hectares, crop, plantingDate, annualPriceBirr, currency, discount, paymentStatus, gpsCoordsStr, via }) {
+  return postEvent({ event: 'field_request', phone, fieldMode, hectares, crop, plantingDate, annualPriceBirr, currency, discount, paymentStatus, gpsCoordsStr, via })
 }
 
 export function postAgentRequest({ phone, name, region, woreda, language, via }) {

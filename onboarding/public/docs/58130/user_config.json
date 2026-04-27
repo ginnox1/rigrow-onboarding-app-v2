@@ -1,0 +1,43 @@
+{
+  "userId": "58130",
+  "phoneNr": "0967897901",
+  "name": "Test Farmer",
+  "projectId": "A1",
+  "language": "en",
+  "calendarType": "INTL",
+  "datePickerType": "INTL",
+  "fields": [
+    {
+      "id": "70499196-c6a1-4a86-8b96-7cd2ca89ac74",
+      "name": "E4 Onion",
+      "A": 1.1,
+      "q": 28,
+      "type": "drip",
+      "efficiency": 90
+    },
+    {
+      "id": "b45abfb2-e5e8-471d-a948-2d3c97d8dcd9",
+      "name": "D8 Tomato",
+      "A": 5.7,
+      "q": 46,
+      "type": "drip",
+      "efficiency": 90
+    },
+    {
+      "id": "c7e7505d-ed14-4db4-a78f-be56245fbe37",
+      "name": "D2 Maize",
+      "A": 7.9,
+      "q": 46,
+      "type": "drip",
+      "efficiency": 90
+    }
+  ],
+  "signatureString": "SIG_1774183926425_zycvpc",
+  "boundDevices": [
+    {
+      "signature": "SIG_1774183926425_zycvpc",
+      "phoneNr": "0967897901",
+      "boundAt": "2026-04-02T11:33:27.042Z"
+    }
+  ]
+}

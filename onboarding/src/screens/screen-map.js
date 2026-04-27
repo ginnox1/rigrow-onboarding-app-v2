@@ -1,13 +1,13 @@
 import { saveState } from '../storage.js'
-import { postAgentRequest } from '../crm.js'
+import { postAgentRequest, postFieldRequest } from '../crm.js'
 import { createMap, attachDraw, calcHectares, hasSelfIntersection, addGreenMarker, mapboxgl } from '../map.js'
-import { MIN_FARM_HA } from '../config.js'
+import { MIN_FARM_HA, COUNTRY_PRICING, COUNTRY_BBOX } from '../config.js'
 import { t } from '../i18n.js'
 import { showToast } from '../main.js'
 import { Protocol, PMTiles } from 'pmtiles'
 import { importPMTiles, listLocalMaps, getMapSource } from '../offlineMap.js'
 
-const CROPS = ['Maize','Wheat','Teff','Barley','Tomato','Onion','Other']
+const CROPS = ['Barley','Broccoli','Cabbage','Garlic','Kale','Lentils','Maize','Onion','Pepper','Potato','Sorghum','Sweet Potato','Teff','Tomato','Wheat','Other']
 
 const MAP_CENTRES = {
   '+251': [38.7578, 9.0192],
@@ -32,30 +32,89 @@ export async function renderMap(container, state, navigate) {
   const fieldMode = state?.fieldMode ?? null
 
   if (!fieldMode) {
+    const prefix = state?.phonePrefix ?? '+251'
+    const pricing = COUNTRY_PRICING[prefix]
+    const boundAvailable = !!(pricing?.rate)
+    const priceLabel = boundAvailable
+      ? t('rate_display', lang, { currency: pricing.currency, rate: pricing.rate })
+      : t('price_coming_soon', lang)
+
+    const existingFields = state?.userConfig?.fields ?? []
+    const hasBoundaryField = existingFields.some(f => f.registrationType === 'boundary')
+
+    const pinCard = hasBoundaryField ? '' : `
+      <div class="mode-card" id="select-pin">
+        <span class="mode-badge mode-badge-free">${t('mode_pin_free_badge', lang)}</span>
+        <strong>📍 ${t('mode_pin', lang)}</strong>
+        <p>${t('mode_pin_desc', lang)}</p>
+        <ul class="mode-features">
+          <li>${t('mode_pin_feat_weather', lang)}</li>
+          <li>${t('mode_pin_feat_soil', lang)}</li>
+          <li>${t('mode_pin_feat_calc', lang)}</li>
+        </ul>
+      </div>
+    `
+
+    const boundCard = `
+      <div class="mode-card ${boundAvailable ? '' : 'mode-card-unavailable'}" id="select-boundary">
+        <span class="mode-badge ${boundAvailable ? 'mode-badge-paid' : 'mode-badge-soon'}">${priceLabel}</span>
+        <strong>🗺️ ${t('mode_boundary', lang)}</strong>
+        <p>${hasBoundaryField ? t('bound_has_existing', lang) : t('bound_new_desc', lang)}</p>
+        <ul class="mode-features">
+          <li>${t('bound_feat_plus', lang)}</li>
+          <li>${t('bound_feat_irrigation', lang)}</li>
+          <li>${t('bound_feat_forecast', lang)}</li>
+          <li>${t('bound_feat_enterprise', lang)}</li>
+        </ul>
+      </div>
+    `
+
     container.innerHTML = `
       <div class="screen screen-map-select">
+        <button class="btn-back" id="mode-back-btn">${t('back', lang)}</button>
         <h2>${t('mode_select_title', lang)}</h2>
+        ${hasBoundaryField ? `<p class="hint-text">${t('bound_existing_note', lang)}</p>` : ''}
         <div class="mode-cards">
-          <div class="mode-card" id="select-pin"><strong>${t('mode_pin', lang)}</strong><p>Drop a point, enter area manually</p></div>
-          <div class="mode-card" id="select-boundary"><strong>${t('mode_boundary', lang)}</strong><p>Draw farm boundary — area auto-calculated</p></div>
+          ${pinCard}
+          ${boundCard}
+        </div>
+        <div id="bound-unavailable-msg" class="hidden info-box">
+          <p>🌍 <strong>${t('bound_unavailable_title', lang)}</strong></p>
+          <p>${t('bound_unavailable_note', lang)}</p>
+          <button class="btn-ghost" id="dismiss-unavailable">${t('back', lang)}</button>
         </div>
       </div>
     `
-    container.querySelector('#select-pin').addEventListener('click', async () => {
+
+    container.querySelector('#mode-back-btn').addEventListener('click', () => navigate('home'))
+
+    container.querySelector('#select-pin')?.addEventListener('click', async () => {
       await saveState({ fieldMode: 'pin' })
       navigate('map')
     })
+
     container.querySelector('#select-boundary').addEventListener('click', async () => {
+      if (!boundAvailable) {
+        container.querySelector('.mode-cards').classList.add('hidden')
+        container.querySelector('#bound-unavailable-msg').classList.remove('hidden')
+        return
+      }
       await saveState({ fieldMode: 'boundary' })
       navigate('map')
     })
+
+    container.querySelector('#dismiss-unavailable').addEventListener('click', () => {
+      container.querySelector('.mode-cards').classList.remove('hidden')
+      container.querySelector('#bound-unavailable-msg').classList.add('hidden')
+    })
+
     return
   }
 
   // Listen for MAP_LOADED postMessage from service worker (Share Target flow)
   const onMapLoaded = async (event) => {
     if (event.data?.type === 'MAP_LOADED') {
-      showToast('Map loaded — ready for offline use')
+      showToast(t('map_loaded_toast', lang))
       await saveState({ mapSource: 'local' })
       navigator.serviceWorker.removeEventListener('message', onMapLoaded)
       navigate('map')
@@ -91,45 +150,64 @@ export async function renderMap(container, state, navigate) {
   const minDate = new Date(today); minDate.setMonth(minDate.getMonth() - 3)
   const maxDate = new Date(today); maxDate.setMonth(maxDate.getMonth() + 1)
 
-  // Restore crop — detect if previously entered value was a custom 'other' crop
-  const STD_CROPS = ['maize','wheat','teff','barley','tomato','onion']
-  const savedCrop = state?.crop ?? ''
-  const isStdCrop = STD_CROPS.includes(savedCrop.toLowerCase())
-  const restoredSelect = isStdCrop ? savedCrop.toLowerCase() : (savedCrop ? 'other' : '')
-  const restoredOther  = isStdCrop ? '' : savedCrop
+  // Restore crop — use cropName (pure crop without prefix) for select restoration
+  const STD_CROPS = ['barley','broccoli','cabbage','garlic','kale','lentils','maize','onion','pepper','potato','sorghum','sweet potato','teff','tomato','wheat']
+  const savedCropName = state?.cropName ?? state?.crop ?? ''
+  const isStdCrop = STD_CROPS.includes(savedCropName.toLowerCase())
+  const restoredSelect = isStdCrop ? savedCropName.toLowerCase() : (savedCropName ? 'other' : '')
+  const restoredOther  = isStdCrop ? '' : savedCropName
+  const restoredPrefix = state?.cropPrefix ?? ''
 
   container.innerHTML = `
     <div class="screen screen-map">
-      <button class="btn-back" id="map-back-btn">← Change method</button>
-      <div id="source-switcher" class="${hasLocal ? '' : 'hidden'}">
-        <button id="btn-online" class="source-btn ${mapSource === 'online' ? 'active' : ''}">🌐 Online Map</button>
-        <button id="btn-local" class="source-btn ${mapSource === 'local' ? 'active' : ''}">📁 Local Map</button>
+      <div class="map-top-row">
+        <button class="btn-back" id="map-back-btn">${t('change_method', lang)}</button>
+        <div id="load-map-file-row" class="${shareTargetUnavailable ? '' : 'hidden'}">
+          <label class="btn-ghost load-map-label">
+            ${t('load_map_file', lang)}
+            <input id="load-map-input" type="file" accept=".pmtiles" class="hidden" />
+          </label>
+        </div>
       </div>
-      <div id="load-map-file-row" class="${shareTargetUnavailable ? '' : 'hidden'}">
-        <label class="btn-ghost load-map-label">
-          Load map file
-          <input id="load-map-input" type="file" accept=".pmtiles" class="hidden" />
-        </label>
+      <div id="source-switcher" class="${hasLocal ? '' : 'hidden'}">
+        <button id="btn-online" class="source-btn ${mapSource === 'online' ? 'active' : ''}">${t('map_source_online', lang)}</button>
+        <button id="btn-local" class="source-btn ${mapSource === 'local' ? 'active' : ''}">${t('map_source_local', lang)}</button>
+      </div>
+      <div class="gps-coord-row">
+        <input id="gps-lat" type="number" step="any" placeholder="${t('gps_lat_placeholder', lang)}" inputmode="decimal" />
+        <input id="gps-lng" type="number" step="any" placeholder="${t('gps_lng_placeholder', lang)}" inputmode="decimal" />
+        <button id="gps-validate-btn" class="btn-gps-validate" title="Validate coordinates">✓</button>
+        <span id="gps-status" class="gps-status"></span>
       </div>
       <div id="map-container"></div>
       <div class="map-form">
-        <label>Field Area, Ha (Must be ≥ 0.5 Ha)
+        <label>${t('area_label_full', lang)}
           <input id="area-input" type="number" min="0.5" step="0.1"
             ${fieldMode === 'boundary' ? 'readonly' : ''}
             placeholder="Ha"
             value="${fieldMode === 'pin' && state?.hectares ? state.hectares : ''}" />
         </label>
         <div id="area-warning" class="error-text hidden">${t('area_too_small', lang)}</div>
-        <label>${t('crop_label', lang)}
-          <select id="crop-select">
-            <option value="">— Select —</option>
-            ${CROPS.map(c => `<option value="${c.toLowerCase()}"${c.toLowerCase() === restoredSelect ? ' selected' : ''}>${c}</option>`).join('')}
-          </select>
-        </label>
-        <div id="other-crop-group" class="${restoredSelect === 'other' ? '' : 'hidden'}">
-          <label>Crop name<input id="other-crop-input" type="text" placeholder="Enter crop name" value="${restoredOther}" /></label>
+        <div class="crop-prefix-row">
+          <label class="crop-prefix-label">${t('field_id_label', lang)}
+            <input id="crop-prefix-input" type="text" maxlength="10" placeholder="e.g. E4" value="${restoredPrefix}" />
+          </label>
+          <label class="crop-select-label">${t('crop_label', lang)}
+            <select id="crop-select">
+              <option value="">— Select —</option>
+              ${CROPS.map(c => {
+                const val = c.toLowerCase()
+                const key = `crop_${val.replace(/ /g, '_')}`
+                return `<option value="${val}"${val === restoredSelect ? ' selected' : ''}>${t(key, lang)}</option>`
+              }).join('')}
+            </select>
+          </label>
         </div>
-        <label>Planting Date (up to 3 months ago, or 1 month ahead)
+        <p class="hint-text">${t('field_id_hint', lang)}</p>
+        <div id="other-crop-group" class="${restoredSelect === 'other' ? '' : 'hidden'}">
+          <label>${t('other_crop_label', lang)}<input id="other-crop-input" type="text" placeholder="e.g. Pepper" value="${restoredOther}" /></label>
+        </div>
+        <label>${t('planting_date_full', lang)}
           <input id="date-input" type="date"
             min="${toDateStr(minDate)}" max="${toDateStr(maxDate)}"
             value="${state?.plantingDate ?? ''}" />
@@ -166,12 +244,57 @@ export async function renderMap(container, state, navigate) {
     if (!file) return
     try {
       await importPMTiles(file)
-      showToast('Map loaded — ready for offline use')
+      showToast(t('map_loaded_toast', lang))
       await saveState({ mapSource: 'local' })
       navigate('map')
     } catch (err) {
       showToast('Failed to load map file')
       console.error(err)
+    }
+  })
+
+  // GPS coordinate input — validate and place pin / fly-to
+  const prefix = state?.phonePrefix ?? '+251'
+  const bbox = COUNTRY_BBOX[prefix] ?? COUNTRY_BBOX['+251']
+  const [latMin, latMax, lngMin, lngMax] = bbox
+
+  const gpsLatEl  = container.querySelector('#gps-lat')
+  const gpsLngEl  = container.querySelector('#gps-lng')
+  const gpsStatus = container.querySelector('#gps-status')
+
+  function gpsReset() {
+    gpsStatus.textContent = ''
+    gpsStatus.className = 'gps-status'
+  }
+  gpsLatEl.addEventListener('input', gpsReset)
+  gpsLngEl.addEventListener('input', gpsReset)
+
+  container.querySelector('#gps-validate-btn').addEventListener('click', () => {
+    const lat = parseFloat(gpsLatEl.value)
+    const lng = parseFloat(gpsLngEl.value)
+
+    const inRange = !isNaN(lat) && !isNaN(lng) &&
+      lat >= latMin && lat <= latMax &&
+      lng >= lngMin && lng <= lngMax
+
+    if (!inRange) {
+      gpsStatus.textContent = '✗'
+      gpsStatus.className = 'gps-status gps-invalid'
+      showToast(t('gps_out_of_range', lang, { latMin, latMax, lngMin, lngMax }))
+      return
+    }
+
+    gpsStatus.textContent = '✓'
+    gpsStatus.className = 'gps-status gps-valid'
+
+    if (fieldMode === 'pin') {
+      pinCoords = { lat, lng }
+      if (currentMarker) currentMarker.remove()
+      currentMarker = addGreenMarker(map, [lng, lat])
+      map.flyTo({ center: [lng, lat], zoom: 15 })
+      checkReady()
+    } else {
+      map.flyTo({ center: [lng, lat], zoom: 14 })
     }
   })
 
@@ -269,14 +392,14 @@ export async function renderMap(container, state, navigate) {
     const plantingDate = container.querySelector('#date-input').value
     let hint = ''
     if (fieldMode === 'pin') {
-      if (!pinCoords) hint = 'Drop a pin on the map to continue'
+      if (!pinCoords) hint = t('hint_drop_pin', lang)
     } else {
-      if (!polygon) hint = 'Draw your farm boundary to continue'
+      if (!polygon) hint = t('hint_draw_boundary', lang)
     }
-    if (!hint && (!ha || ha < MIN_FARM_HA)) hint = `Farm area must be at least ${MIN_FARM_HA} Ha`
-    if (!hint && !cropSelect) hint = 'Select a crop'
-    if (!hint && cropSelect === 'other' && !otherCropVal) hint = 'Enter the crop name'
-    if (!hint && !plantingDate) hint = 'Select a planting date'
+    if (!hint && (!ha || ha < MIN_FARM_HA)) hint = t('hint_area_min', lang, { min: MIN_FARM_HA })
+    if (!hint && !cropSelect) hint = t('hint_select_crop', lang)
+    if (!hint && cropSelect === 'other' && !otherCropVal) hint = t('hint_enter_crop', lang)
+    if (!hint && !plantingDate) hint = t('hint_select_date', lang)
     container.querySelector('#map-hint').textContent = hint
     container.querySelector('#continue-btn').disabled = hint !== ''
     return hint
@@ -303,23 +426,42 @@ export async function renderMap(container, state, navigate) {
     const ha = parseFloat(container.querySelector('#area-input').value)
     const cropSelect = container.querySelector('#crop-select').value
     const otherCropVal = container.querySelector('#other-crop-input').value.trim()
-    const crop = cropSelect === 'other' ? otherCropVal : cropSelect
+    const cropPrefix = container.querySelector('#crop-prefix-input').value.trim()
+    const cropName = cropSelect === 'other' ? otherCropVal : cropSelect
+    const crop = cropPrefix ? `${cropPrefix}-${cropName}` : cropName
     const plantingDate = container.querySelector('#date-input').value
 
     let gpsCoordsStr = ''
     let gpsCoords = []
     if (fieldMode === 'pin') {
-      if (!pinCoords) { showToast('Please drop a pin on the map'); return }
+      if (!pinCoords) { showToast(t('toast_drop_pin', lang)); return }
       gpsCoordsStr = `${pinCoords.lng.toFixed(6)},${pinCoords.lat.toFixed(6)}`
       gpsCoords = [[pinCoords.lng, pinCoords.lat]]
     } else {
-      if (!polygon) { showToast('Please draw your farm boundary'); return }
+      if (!polygon) { showToast(t('toast_draw_boundary', lang)); return }
       gpsCoords = polygon.geometry.coordinates[0].slice(0, -1)
       gpsCoordsStr = gpsCoords.map(c => `${c[0].toFixed(6)},${c[1].toFixed(6)}`).join(';')
     }
 
-    await saveState({ hectares: ha, crop, plantingDate, gpsCoordsStr, gpsCoords })
-    navigate('pricing')
+    await saveState({ hectares: ha, cropName, cropPrefix, crop, plantingDate, gpsCoordsStr, gpsCoords })
+    if (fieldMode === 'pin') {
+      postFieldRequest({
+        phone: state.phone,
+        fieldMode: 'pin',
+        hectares: ha,
+        crop,
+        plantingDate,
+        annualPriceBirr: 0,
+        currency: '',
+        discount: 0,
+        paymentStatus: 'free',
+        gpsCoordsStr,
+        via: state?.agentPhone ?? 'self'
+      }).catch(() => {})
+      navigate('complete')
+    } else {
+      navigate('pricing')
+    }
   })
 
   container.querySelector('#agent-request-btn').addEventListener('click', async () => {

@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build:pwa",
+  "outputDirectory": "dist/onboarding",
+  "rewrites": [{ "source": "/((?!assets/).*)", "destination": "/index.html" }]
+}

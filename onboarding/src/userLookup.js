@@ -16,17 +16,26 @@ export function normalisePhone(phone) {
   return [...variants]
 }
 
-export async function fetchUserConfig(phone) {
+export async function fetchUserConfig(phone, forceRefresh = false) {
   const cacheKey = 'user_registry'
   let registry = await getUserConfig(cacheKey)
   let registryCachedAt = await getUserConfig(cacheKey + '_cachedAt')
 
-  if (!registry || !registryCachedAt || Date.now() - registryCachedAt > REGISTRY_CACHE_MS) {
-    const resp = await fetch(USER_REGISTRY_URL)
-    if (!resp.ok) throw new Error('registry_unavailable')
-    registry = await resp.json()
-    await saveUserConfig(cacheKey, registry)
-    await saveUserConfig(cacheKey + '_cachedAt', Date.now())
+  const registryCachedUrl = await getUserConfig(cacheKey + '_url')
+  const registryStale = !registry || !registryCachedAt ||
+    Date.now() - registryCachedAt > REGISTRY_CACHE_MS ||
+    registryCachedUrl !== USER_REGISTRY_URL
+  if (registryStale || forceRefresh) {
+    try {
+      const resp = await fetch(USER_REGISTRY_URL)
+      if (resp.ok) {
+        registry = await resp.json()
+        await saveUserConfig(cacheKey, registry)
+        await saveUserConfig(cacheKey + '_cachedAt', Date.now())
+        await saveUserConfig(cacheKey + '_url', USER_REGISTRY_URL)
+      }
+    } catch (_) {}
+    if (!registry) return null
   }
 
   const variants = normalisePhone(phone)
@@ -37,24 +46,27 @@ export async function fetchUserConfig(phone) {
   if (!userId) return null
 
   let config = await getUserConfig(userId)
-  if (!config) {
-    const resp = await fetch(USER_CONFIG_BASE_URL + userId + '.json')
-    if (!resp.ok) return null
-    config = await resp.json()
-    await saveUserConfig(userId, config)
+  if (!config || forceRefresh) {
+    try {
+      const resp = await fetch(USER_CONFIG_BASE_URL + userId + '/user_config.json')
+      if (resp.ok) {
+        config = await resp.json()
+        await saveUserConfig(userId, config)
+      }
+    } catch (_) {}
+    // Return cached version if fetch failed (offline fallback)
+    if (!config) return null
   }
   return config
 }
 
 export async function fetchUserConfigStripped(phone) {
   const variants = normalisePhone(phone)
-  // Try stripped cache first
   for (const v of variants) {
     const cached = await getStrippedConfig(v)
     if (cached) return cached
   }
 
-  // Reuse the 24h registry cache (same as fetchUserConfig)
   const cacheKey = 'user_registry'
   let registry = await getUserConfig(cacheKey)
   let registryCachedAt = await getUserConfig(cacheKey + '_cachedAt')
@@ -73,7 +85,7 @@ export async function fetchUserConfigStripped(phone) {
   }
   if (!userId) return null
 
-  const cfgResp = await fetch(USER_CONFIG_BASE_URL + userId + '.json')
+  const cfgResp = await fetch(USER_CONFIG_BASE_URL + userId + '/user_config.json')
   if (!cfgResp.ok) return null
   const full = await cfgResp.json()
 

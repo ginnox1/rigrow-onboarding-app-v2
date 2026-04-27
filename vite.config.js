@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { createRequire } from 'module'
+const { version } = createRequire(import.meta.url)('./package.json')
 
 export default defineConfig({
+  define: { __APP_VERSION__: JSON.stringify(version) },
   root: 'onboarding',
   envDir: '..',
   build: { outDir: '../dist/onboarding', emptyOutDir: true },

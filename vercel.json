@@ -1,5 +1,10 @@
 {
-  "buildCommand": "npm run build:pwa",
-  "outputDirectory": "dist/onboarding",
-  "rewrites": [{ "source": "/((?!assets/).*)", "destination": "/index.html" }]
+  "experimentalServices": {
+    "frontend": {
+      "routePrefix": "/",
+      "framework": "vite",
+      "buildCommand": "npm run build:pwa",
+      "outputDirectory": "dist/onboarding"
+    }
+  }
 }

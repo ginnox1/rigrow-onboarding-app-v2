@@ -63,13 +63,16 @@ export async function renderHome(container, state, navigate) {
       const pending = (state?.userConfig?.fields ?? []).filter(f => f.pending)
       if (pending.length) {
         const serverFields = fresh.fields ?? []
-        const stillPending = pending.filter(p =>
-          !serverFields.some(s =>
-            cropFromName(s.name).toLowerCase() === cropFromName(p.name).toLowerCase() &&
-            Math.abs((s.A ?? 0) - (p.A ?? 0)) < 0.15
-          )
-        )
-        fresh = { ...fresh, fields: [...serverFields, ...stillPending] }
+        const isMatch = (s, p) =>
+          cropFromName(s.name).toLowerCase() === cropFromName(p.name).toLowerCase() &&
+          Math.abs((s.A ?? 0) - (p.A ?? 0)) < 0.15
+        // Carry registrationType from matched pending field onto its server counterpart
+        const mergedServer = serverFields.map(s => {
+          const matched = pending.find(p => isMatch(s, p))
+          return matched ? { ...s, registrationType: matched.registrationType } : s
+        })
+        const stillPending = pending.filter(p => !serverFields.some(s => isMatch(s, p)))
+        fresh = { ...fresh, fields: [...mergedServer, ...stillPending] }
       }
       await saveState({ userConfig: fresh })
       render(fresh)

@@ -4,6 +4,6 @@ dist/
 .env.local
 backend/.env
 .worktrees/
-.env
+vercel-env-import.env
 
 

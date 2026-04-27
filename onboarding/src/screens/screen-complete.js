@@ -27,6 +27,7 @@ export async function renderComplete(container, state, navigate) {
       A: state?.hectares ?? 0,
       registrationType: state?.fieldMode ?? 'pin',
       pending: true,
+      crmQueueKey: state?.crmQueueKey ?? null,
     }
     const currentFields = state?.userConfig?.fields ?? []
     const updatedConfig = {

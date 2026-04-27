@@ -1,5 +1,5 @@
 import { saveState } from '../storage.js'
-import { postAgentRequest, postFieldRequest } from '../crm.js'
+import { postAgentRequest, enqueueFieldRequest } from '../crm.js'
 import { createMap, attachDraw, calcHectares, hasSelfIntersection, addGreenMarker, mapboxgl } from '../map.js'
 import { MIN_FARM_HA, COUNTRY_PRICING, COUNTRY_BBOX } from '../config.js'
 import { t } from '../i18n.js'
@@ -445,19 +445,12 @@ export async function renderMap(container, state, navigate) {
 
     await saveState({ hectares: ha, cropName, cropPrefix, crop, plantingDate, gpsCoordsStr, gpsCoords })
     if (fieldMode === 'pin') {
-      postFieldRequest({
-        phone: state.phone,
-        fieldMode: 'pin',
-        hectares: ha,
-        crop,
-        plantingDate,
-        annualPriceBirr: 0,
-        currency: '',
-        discount: 0,
-        paymentStatus: 'free',
-        gpsCoordsStr,
-        via: state?.agentPhone ?? 'self'
-      }).catch(() => {})
+      const crmQueueKey = await enqueueFieldRequest({
+        phone: state.phone, fieldMode: 'pin', hectares: ha, crop, plantingDate,
+        annualPriceBirr: 0, currency: '', discount: 0, paymentStatus: 'free',
+        gpsCoordsStr, via: state?.agentPhone ?? 'self'
+      }).catch(() => null)
+      await saveState({ crmQueueKey })
       navigate('complete')
     } else {
       navigate('pricing')

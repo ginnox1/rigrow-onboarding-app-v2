@@ -1,5 +1,5 @@
 import { saveState } from '../storage.js'
-import { postFieldRequest } from '../crm.js'
+import { enqueueFieldRequest } from '../crm.js'
 import { calcAnnualBirr } from '../pricing.js'
 import { COUNTRY_PRICING } from '../config.js'
 import { t } from '../i18n.js'
@@ -49,24 +49,14 @@ export async function renderPricing(container, state, navigate) {
     btn.disabled = true
     btn.classList.add('btn-loading')
     const via = state?.agentPhone ?? 'self'
-    try {
-      await saveState({ paymentStatus: 'pending_sms' })
-      await postFieldRequest({
-        phone: state.phone,
-        fieldMode: state.fieldMode,
-        hectares: ha,
-        crop: state.crop,
-        plantingDate: state.plantingDate,
-        annualPriceBirr: annual,
-        currency,
-        discount,
-        paymentStatus: 'pending_sms',
-        gpsCoordsStr,
-        via
-      })
-    } catch {
-      // offline queue handled inside crm.js; navigate regardless
-    }
+    await saveState({ paymentStatus: 'pending_sms' })
+    const crmQueueKey = await enqueueFieldRequest({
+      phone: state.phone, fieldMode: state.fieldMode, hectares: ha,
+      crop: state.crop, plantingDate: state.plantingDate,
+      annualPriceBirr: annual, currency, discount,
+      paymentStatus: 'pending_sms', gpsCoordsStr, via
+    }).catch(() => null)
+    await saveState({ crmQueueKey })
     navigate('complete')
   })
 

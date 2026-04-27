@@ -102,6 +102,13 @@ const strings = {
     // Complete
     view_my_fields: 'View My Fields →',
     field_sync_note: 'Your request has been submitted. Field data will sync when connection is available.',
+    // Home — field management
+    field_syncing: 'Syncing…',
+    delete_field: 'Delete field',
+    delete_field_title: 'Remove this field?',
+    delete_field_msg: 'Delete "{name}" — this cannot be undone.',
+    delete_confirm: 'Yes, delete',
+    delete_cancel: 'Keep it',
     // Crops
     crop_barley: 'Barley',
     crop_broccoli: 'Broccoli',

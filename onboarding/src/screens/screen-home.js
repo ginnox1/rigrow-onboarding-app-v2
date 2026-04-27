@@ -1,6 +1,7 @@
 import { t } from '../i18n.js'
 import { saveState } from '../storage.js'
 import { fetchUserConfig } from '../userLookup.js'
+import { dequeueField } from '../crm.js'
 
 const CALC_URL = 'https://rigrow-calc.quanomics.com'
 
@@ -23,7 +24,10 @@ export async function renderHome(container, state, navigate) {
           const params = new URLSearchParams({ hectares: f.A, crop })
           const calcUrl = `${CALC_URL}?${params}`
           const pendingBadge = f.pending
-            ? `<span class="field-pending-badge">Syncing…</span>`
+            ? `<span class="field-pending-badge">${t('field_syncing', lang)}</span>`
+            : ''
+          const deleteBtn = f.pending
+            ? `<button class="btn-field-delete" data-field-id="${f.id}" title="${t('delete_field', lang)}">✕</button>`
             : ''
           return `
             <div class="field-card${f.pending ? ' field-card-pending' : ''}">
@@ -32,7 +36,10 @@ export async function renderHome(container, state, navigate) {
                 <span>${f.A} Ha</span>
                 ${pendingBadge}
               </div>
-              <a href="${calcUrl}" target="_blank" rel="noopener noreferrer" class="btn-calc">${t('calculator', lang)}</a>
+              <div class="field-card-actions">
+                <a href="${calcUrl}" target="_blank" rel="noopener noreferrer" class="btn-calc">${t('calculator', lang)}</a>
+                ${deleteBtn}
+              </div>
             </div>
           `
         }).join('')
@@ -51,6 +58,38 @@ export async function renderHome(container, state, navigate) {
     container.querySelector('#add-farm-btn').addEventListener('click', async () => {
       await saveState({ fieldMode: null })
       navigate('map')
+    })
+
+    container.querySelectorAll('.btn-field-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const fieldId = btn.dataset.fieldId
+        const fields = userConfig?.fields ?? []
+        const field = fields.find(f => f.id === fieldId)
+        if (!field) return
+
+        // Confirmation modal
+        const overlay = document.createElement('div')
+        overlay.className = 'modal-overlay'
+        overlay.innerHTML = `
+          <div class="modal-box">
+            <div class="modal-icon">🗑️</div>
+            <h3>${t('delete_field_title', lang)}</h3>
+            <p>${t('delete_field_msg', lang, { name: field.name ?? 'Field' })}</p>
+            <button id="confirm-delete" class="btn-primary">${t('delete_confirm', lang)}</button>
+            <button id="cancel-delete" class="btn-ghost">${t('delete_cancel', lang)}</button>
+          </div>
+        `
+        document.body.appendChild(overlay)
+
+        overlay.querySelector('#cancel-delete').addEventListener('click', () => overlay.remove())
+        overlay.querySelector('#confirm-delete').addEventListener('click', async () => {
+          overlay.remove()
+          await dequeueField(field.crmQueueKey).catch(() => {})
+          const updated = { ...userConfig, fields: fields.filter(f => f.id !== fieldId) }
+          await saveState({ userConfig: updated })
+          render(updated)
+        })
+      })
     })
   }
 

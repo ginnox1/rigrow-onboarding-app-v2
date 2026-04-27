@@ -1,4 +1,5 @@
 {
+  "outputDirectory": "dist/onboarding",
   "experimentalServices": {
     "frontend": {
       "routePrefix": "/",

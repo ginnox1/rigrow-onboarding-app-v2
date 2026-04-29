@@ -24,13 +24,18 @@ function doPost(e) {
 
     if (p.event === 'new_registration') {
       var sh = ss.getSheetByName('Registrations') || ss.insertSheet('Registrations');
+      var regHeader = ['Timestamp','Event','Phone','Name','Region','Woreda','Language','Registered Via','Locale Lat','Locale Lon'];
       if (sh.getLastRow() === 0) {
-        sh.appendRow(['Timestamp','Event','Phone','Name','Region','Woreda','Language','Registered Via']);
+        sh.appendRow(regHeader);
+      } else if (sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].length < regHeader.length) {
+        sh.getRange(1, 1, 1, regHeader.length).setValues([regHeader]);
       }
       sh.appendRow([
         p.timestamp, p.event, p.phone,
         p.name || '', p.region || '', p.woreda || '', p.language || '',
-        p.via || 'self'
+        p.via || 'self',
+        (p.localeCoords && p.localeCoords.lat != null) ? p.localeCoords.lat : '',
+        (p.localeCoords && p.localeCoords.lon != null) ? p.localeCoords.lon : ''
       ]);
 
     } else if (p.event === 'field_request') {

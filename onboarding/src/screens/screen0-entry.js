@@ -11,7 +11,7 @@ const PREFIXES = [
 ]
 
 function defaultPrefix(lang) {
-  return (lang === 'am' || lang === 'om') ? '+251' : '+254'
+  return '+251'
 }
 
 export async function renderEntry(container, state, navigate) {

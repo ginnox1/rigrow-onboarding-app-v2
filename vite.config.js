@@ -14,6 +14,9 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw-custom.js',
+      injectManifest: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}']
+      },
       manifest: {
         name: 'Rigrow Onboarding',
         short_name: 'Rigrow',

@@ -51,8 +51,8 @@ async function postEvent(payload) {
   }
 }
 
-export function postLead({ phone, name, region, woreda, language, via }) {
-  return postEvent({ event: 'new_registration', phone, name, region, woreda, language, via })
+export function postLead({ phone, name, region, woreda, language, via, localeCoords }) {
+  return postEvent({ event: 'new_registration', phone, name, region, woreda, language, via, localeCoords })
 }
 
 export function postFieldRequest({ phone, fieldMode, hectares, crop, plantingDate, annualPriceBirr, currency, discount, paymentStatus, gpsCoordsStr, via }) {

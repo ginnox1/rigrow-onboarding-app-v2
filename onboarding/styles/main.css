@@ -288,6 +288,23 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 .modal-box h3 { color: var(--text); font-size: 1.1rem; }
 .modal-box p { color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
 
+/* ── Autocomplete ────────────────────────────────────────────── */
+.autocomplete-wrap { position: relative; }
+.autocomplete-list {
+  position: absolute; z-index: 500; top: calc(100% + 2px); left: 0; right: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); max-height: 220px; overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+.autocomplete-item {
+  padding: 10px 12px; font-size: 0.9rem; cursor: pointer;
+  color: var(--text); border-bottom: 1px solid var(--border);
+}
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-item:hover, .autocomplete-item.ac-active {
+  background: var(--green-light); color: var(--green);
+}
+
 /* ── Download page ───────────────────────────────────────────── */
 .screenshot-gallery {
   display: flex; gap: 12px; overflow-x: auto; padding: 4px 0 12px;

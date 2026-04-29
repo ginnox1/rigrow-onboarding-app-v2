@@ -21,7 +21,7 @@ export async function renderHome(container, state, navigate) {
       ? `<p class="empty-state">${t('no_fields_yet', lang)}</p>`
       : fields.map(f => {
           const crop = cropFromName(f.name)
-          const params = new URLSearchParams({ hectares: f.A, crop })
+          const params = new URLSearchParams({ hectares: f.A, crop, lang })
           const calcUrl = `${CALC_URL}?${params}`
           const pendingBadge = f.pending
             ? `<span class="field-pending-badge">${t('field_syncing', lang)}</span>`

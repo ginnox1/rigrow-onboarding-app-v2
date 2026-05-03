@@ -44,13 +44,16 @@ export async function renderHome(container, state, navigate) {
           `
         }).join('')
 
+    const hasPending = fields.some(f => f.pending)
     container.innerHTML = `
       <div class="screen screen-home">
         <h2>${t('welcome_back', lang, { name })}</h2>
         <div class="fields-list">${fieldCards}</div>
+        ${hasPending ? `<p class="pending-note">You can delete a pending field before it syncs. Sync completes in about 10 minutes.</p>` : ''}
         <p class="teaser">Unlock field-level insights</p>
         <div class="cta-group">
           <button id="add-farm-btn" class="btn-primary">+ Add a Farm</button>
+          <button id="download-app-btn" class="btn-ghost">📲 Download the Rigrow App</button>
         </div>
       </div>
     `
@@ -59,6 +62,8 @@ export async function renderHome(container, state, navigate) {
       await saveState({ fieldMode: null })
       navigate('map')
     })
+
+    container.querySelector('#download-app-btn').addEventListener('click', () => navigate('download'))
 
     container.querySelectorAll('.btn-field-delete').forEach(btn => {
       btn.addEventListener('click', () => {

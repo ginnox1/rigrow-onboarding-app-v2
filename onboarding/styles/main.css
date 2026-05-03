@@ -180,6 +180,7 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
   padding: 1px 7px; margin-left: 6px;
 }
 .field-card-actions { display: flex; align-items: center; gap: 8px; }
+.pending-note { font-size: 0.8rem; color: var(--muted); text-align: center; margin: 4px 0 12px; padding: 6px 12px; border: 1px dashed var(--border); border-radius: var(--radius); }
 .btn-field-delete {
   background: none; border: 1px solid var(--border); border-radius: 4px;
   color: var(--muted); font-size: 0.85rem; padding: 3px 7px; cursor: pointer;

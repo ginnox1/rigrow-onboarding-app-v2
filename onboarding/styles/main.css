@@ -114,6 +114,9 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 /* ── Logo ────────────────────────────────────────────────────── */
 .logo { font-size: 2rem; font-weight: 700; color: var(--green); text-align: center; padding: 24px 0 8px; }
 .logo-img { max-width: 150px; height: auto; display: block; margin: 24px auto 8px; }
+.entry-welcome { text-align: center; font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 8px 0 4px; }
+.entry-subtitle { text-align: center; font-size: 0.9rem; color: var(--muted); margin: 0 0 20px; }
+.entry-lang-label { text-align: center; font-size: 0.78rem; color: var(--muted); margin: 0 0 6px; }
 
 /* ── Error ───────────────────────────────────────────────────── */
 .error-text { color: var(--red); font-size: 0.85rem; }

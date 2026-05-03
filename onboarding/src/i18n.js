@@ -499,7 +499,7 @@ export function t(key, lang = 'en', vars = {}) {
 
 export const LANGUAGES = [
   { code: 'en', label: 'EN' },
-  { code: 'sw', label: 'SW' },
   { code: 'am', label: 'አማ' },
   { code: 'om', label: 'OM' },
+  { code: 'sw', label: 'SW' },
 ]

@@ -53,12 +53,23 @@ You just send a GET request to https://nominatim.openstreetmap.org/search?q={use
 
 Plan for this.
 
-[  ] Add "For faster onboarding Pin your farm." on thankyou page of registration.
-
+[ - ] Add "For faster onboarding Pin your farm." on thankyou page of registration.
+      No more needed with worede gps worked out. 
+      
 # TBD
 
-[  ] When calling rigrow-calc, also send user prefered language. Advice what changes to make on the rigrow-calc project.
 
+
+[ x ] language for woreda names
+
+
+[ x ] make +251 default
+
+[ x ] should not register if woreda not in the list
+
+[  x] When calling rigrow-calc, also send user prefered language. Advice what changes to make on the rigrow-calc project. 
+
+[   ] syncying stays for ever?
 
 [  ] Check if bounding string matches, before revealing data. A privacy concern!
 

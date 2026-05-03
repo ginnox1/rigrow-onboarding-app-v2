@@ -21,6 +21,9 @@ export async function renderEntry(container, state, navigate) {
   container.innerHTML = `
     <div class="screen screen-entry">
       <img src="/assets/logo.png" alt="Rigrow" class="logo-img" />
+      <h2 class="entry-welcome">Welcome to Rigrow.</h2>
+      <p class="entry-subtitle">Enter your phone number to register or login.</p>
+      <p class="entry-lang-label">Choose your language</p>
       <div class="lang-toggle">
         ${LANGUAGES.map(l => `<button class="lang-btn${l.code === lang ? ' active' : ''}" data-lang="${l.code}">${l.label}</button>`).join('')}
       </div>

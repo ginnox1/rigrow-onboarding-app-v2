@@ -50,9 +50,12 @@ export async function renderPricing(container, state, navigate) {
     btn.classList.add('btn-loading')
     const via = state?.agentPhone ?? 'self'
     await saveState({ paymentStatus: 'pending_sms' })
+    const crmCrop = state?.upgradeField?.name
+      ? `${state.upgradeField.name}-UPG`
+      : state.crop
     const crmQueueKey = await enqueueFieldRequest({
       phone: state.phone, fieldMode: state.fieldMode, hectares: ha,
-      crop: state.crop, plantingDate: state.plantingDate,
+      crop: crmCrop, plantingDate: state.plantingDate,
       annualPriceBirr: annual, currency, discount,
       paymentStatus: 'pending_sms', gpsCoordsStr, via
     }).catch(() => null)

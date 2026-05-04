@@ -18,6 +18,9 @@ export async function renderHome(container, state, navigate) {
     const name = userConfig?.name ?? state?.name ?? ''
     const fields = userConfig?.fields ?? []
 
+    const hasPinFields = fields.some(f => f.registrationType === 'pin')
+    let selectedFieldId = null
+
     const fieldCards = fields.length === 0
       ? `<p class="empty-state">${t('no_fields_yet', lang)}</p>`
       : fields.map(f => {
@@ -27,14 +30,18 @@ export async function renderHome(container, state, navigate) {
           const pendingBadge = f.pending
             ? `<span class="field-pending-badge">${t('field_syncing', lang)}</span>`
             : ''
+          const typeBadge = f.registrationType === 'pin'
+            ? `<span class="field-type-badge field-type-pin">📍 Pin</span>`
+            : `<span class="field-type-badge field-type-boundary">🗺️ Boundary</span>`
           const deleteBtn = f.pending
             ? `<button class="btn-field-delete" data-field-id="${f.id}" title="${t('delete_field', lang)}">✕</button>`
             : ''
           return `
-            <div class="field-card${f.pending ? ' field-card-pending' : ''}">
+            <div class="field-card${f.pending ? ' field-card-pending' : ''}" data-field-id="${f.id}" data-reg-type="${f.registrationType ?? ''}">
               <div class="field-info">
                 <strong>${f.name ?? 'Field'}</strong>
                 <span>${f.A} Ha</span>
+                ${typeBadge}
                 ${pendingBadge}
               </div>
               <div class="field-card-actions">
@@ -45,12 +52,21 @@ export async function renderHome(container, state, navigate) {
           `
         }).join('')
 
+    const upgradeCard = hasPinFields ? `
+      <div class="upgrade-card">
+        <h3>⬆️ Upgrade for Precision Advice</h3>
+        <p>Select your pinned field above to upgrade to precision advice. You will get — daily irrigation advice, accurate weather data, and crop insights.</p>
+        <button id="upgrade-btn" class="btn-primary" disabled>Upgrade</button>
+      </div>
+    ` : ''
+
     const hasPending = fields.some(f => f.pending)
     container.innerHTML = `
       <div class="screen screen-home">
         <h2>${t('welcome_back', lang, { name })}</h2>
         <div class="fields-list">${fieldCards}</div>
         ${hasPending ? `<p class="pending-note">You can delete a pending field before it syncs. Sync completes in about 10 minutes.</p>` : ''}
+        ${upgradeCard}
         <p class="teaser">Unlock field-level insights</p>
         <div class="cta-group">
           <button id="add-farm-btn" class="btn-primary">+ Add a Farm</button>
@@ -61,8 +77,37 @@ export async function renderHome(container, state, navigate) {
       </div>
     `
 
+    // Field selection
+    container.querySelectorAll('.field-card').forEach(card => {
+      card.addEventListener('click', e => {
+        if (e.target.closest('.btn-field-delete') || e.target.closest('.btn-calc')) return
+        const fieldId = card.dataset.fieldId
+        if (selectedFieldId === fieldId) {
+          selectedFieldId = null
+          card.classList.remove('field-selected')
+        } else {
+          container.querySelectorAll('.field-card').forEach(c => c.classList.remove('field-selected'))
+          selectedFieldId = fieldId
+          card.classList.add('field-selected')
+        }
+        const upgradeBtn = container.querySelector('#upgrade-btn')
+        if (upgradeBtn) {
+          const sel = fields.find(f => f.id === selectedFieldId)
+          upgradeBtn.disabled = !sel || sel.registrationType !== 'pin'
+        }
+      })
+    })
+
+    // Upgrade button
+    container.querySelector('#upgrade-btn')?.addEventListener('click', async () => {
+      const sel = fields.find(f => f.id === selectedFieldId)
+      if (!sel || sel.registrationType !== 'pin') return
+      await saveState({ fieldMode: null, upgradeField: { name: sel.name } })
+      navigate('map')
+    })
+
     container.querySelector('#add-farm-btn').addEventListener('click', async () => {
-      await saveState({ fieldMode: null })
+      await saveState({ fieldMode: null, upgradeField: null })
       navigate('map')
     })
 
@@ -76,7 +121,6 @@ export async function renderHome(container, state, navigate) {
         const field = fields.find(f => f.id === fieldId)
         if (!field) return
 
-        // Confirmation modal
         const overlay = document.createElement('div')
         overlay.className = 'modal-overlay'
         overlay.innerHTML = `

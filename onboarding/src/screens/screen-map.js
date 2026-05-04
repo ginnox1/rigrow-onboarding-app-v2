@@ -41,8 +41,9 @@ export async function renderMap(container, state, navigate) {
 
     const existingFields = state?.userConfig?.fields ?? []
     const hasBoundaryField = existingFields.some(f => f.registrationType === 'boundary')
+    const isUpgrade = !!state?.upgradeField
 
-    const pinCard = hasBoundaryField ? '' : `
+    const pinCard = (hasBoundaryField || isUpgrade) ? '' : `
       <div class="mode-card" id="select-pin">
         <span class="mode-badge mode-badge-free">${t('mode_pin_free_badge', lang)}</span>
         <strong>📍 ${t('mode_pin', lang)}</strong>
@@ -72,8 +73,9 @@ export async function renderMap(container, state, navigate) {
     container.innerHTML = `
       <div class="screen screen-map-select">
         <button class="btn-back" id="mode-back-btn">${t('back', lang)}</button>
-        <h2>${t('mode_select_title', lang)}</h2>
-        ${hasBoundaryField ? `<p class="hint-text">${t('bound_existing_note', lang)}</p>` : ''}
+        <h2>${isUpgrade ? 'Upgrade to Precision Boundary' : t('mode_select_title', lang)}</h2>
+        ${isUpgrade ? `<p class="upgrade-mode-note">Upgrading <strong>"${state.upgradeField.name}"</strong> — draw your farm boundary to unlock precision advice.</p>` : ''}
+        ${hasBoundaryField && !isUpgrade ? `<p class="hint-text">${t('bound_existing_note', lang)}</p>` : ''}
         <div class="mode-cards">
           ${pinCard}
           ${boundCard}

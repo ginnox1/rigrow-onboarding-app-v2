@@ -21,9 +21,10 @@ export async function renderComplete(container, state, navigate) {
   `
 
   container.querySelector('#home-btn').addEventListener('click', async () => {
+    const upgradeName = state?.upgradeField?.name
     const newField = {
       id: `pending-${Date.now()}`,
-      name: state?.crop || 'New Field',
+      name: upgradeName ? `${upgradeName}-UPG` : (state?.crop || 'New Field'),
       A: state?.hectares ?? 0,
       registrationType: state?.fieldMode ?? 'pin',
       pending: true,
@@ -34,7 +35,7 @@ export async function renderComplete(container, state, navigate) {
       ...(state?.userConfig ?? {}),
       fields: [...currentFields, newField],
     }
-    await saveState({ userConfig: updatedConfig })
+    await saveState({ userConfig: updatedConfig, upgradeField: null })
     navigate('home')
   })
 

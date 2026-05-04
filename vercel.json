@@ -1,4 +1,5 @@
 {
+  "framework": null,
   "buildCommand": "npm run build:pwa",
   "outputDirectory": "dist/onboarding",
   "rewrites": [{ "source": "/:path((?!.*\\..*).*)", "destination": "/index.html" }]

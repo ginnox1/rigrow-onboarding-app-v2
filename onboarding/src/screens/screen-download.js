@@ -1,7 +1,8 @@
 import { postDownloadView } from '../crm.js'
-import { APK_DOWNLOAD_URL } from '../config.js'
 import { APP_SCREENSHOTS } from '../app-screenshots.js'
 import { t } from '../i18n.js'
+
+const APK_PATH = `${window.location.origin}/apk-dowbload/RigrowMobileApp.apk`
 
 export async function renderDownload(container, state, navigate) {
   const lang = state?.language ?? 'en'
@@ -9,8 +10,6 @@ export async function renderDownload(container, state, navigate) {
 
   // Log page view to APK Downloads sheet
   postDownloadView({ phone }).catch(() => {})
-
-  const isLive = APK_DOWNLOAD_URL !== '#'
 
   container.innerHTML = `
     <div class="screen screen-download">
@@ -27,7 +26,7 @@ export async function renderDownload(container, state, navigate) {
         <strong>Note:</strong> You will need the userId sent to your SMS to login.
       </div>
 
-      <a href="${APK_DOWNLOAD_URL}" class="btn-primary btn-download-apk" id="android-btn"${isLive ? ' target="_blank" rel="noopener"' : ' aria-disabled="true"'}>▶ Download Android App</a>
+      <a href="${APK_PATH}" download="RigrowMobileApp.apk" class="btn-primary btn-download-apk" id="android-btn">▶ Download Android App</a>
 
       <div class="download-requirements">
         <strong>Requirements</strong>
@@ -54,7 +53,6 @@ export async function renderDownload(container, state, navigate) {
   container.querySelector('#home-btn').addEventListener('click', () => navigate('home'))
 
   container.querySelector('#android-btn').addEventListener('click', () => {
-    if (!isLive) return
     const modal = container.querySelector('#download-modal')
     modal.classList.remove('hidden')
     setTimeout(() => modal.classList.add('hidden'), 5000)

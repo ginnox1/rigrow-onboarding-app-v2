@@ -1,6 +1,7 @@
 import { USSD_CODE, USSD_ENABLED } from '../config.js'
 import { t } from '../i18n.js'
 import { clearFarmerState } from '../storage.js'
+import { shareButtonHTML, shareFallbackHTML, attachShare } from '../share.js'
 
 export async function renderWelcomeNew(container, state, navigate) {
   const lang = state?.language ?? 'en'
@@ -30,6 +31,10 @@ export async function renderWelcomeNew(container, state, navigate) {
       <button id="yes-signup-btn" class="btn-primary">${t('yes_sign_up', lang)}</button>
       <button id="not-now-btn" class="btn-ghost">${t('not_now', lang)}</button>
       ${state?.isAgent ? `<button id="next-farmer-btn" class="btn-secondary">${t('register_next_farmer', lang)}</button>` : ''}
+      <hr/>
+      <p style="font-size:0.85rem;color:var(--muted);text-align:center">Know a farmer who needs this?</p>
+      ${shareButtonHTML('share-btn-welcome')}
+      ${shareFallbackHTML('share-fallback-welcome')}
     </div>
   `
 
@@ -48,4 +53,6 @@ export async function renderWelcomeNew(container, state, navigate) {
     await clearFarmerState()
     navigate('entry')
   })
+
+  attachShare(document.querySelector('.screen-welcome-new'), 'share-btn-welcome', 'share-fallback-welcome')
 }

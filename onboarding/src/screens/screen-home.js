@@ -2,6 +2,7 @@ import { t } from '../i18n.js'
 import { saveState } from '../storage.js'
 import { fetchUserConfig } from '../userLookup.js'
 import { dequeueField } from '../crm.js'
+import { shareButtonHTML, shareFallbackHTML, attachShare } from '../share.js'
 
 const CALC_URL = 'https://rigrow-calc.quanomics.com'
 
@@ -54,6 +55,8 @@ export async function renderHome(container, state, navigate) {
         <div class="cta-group">
           <button id="add-farm-btn" class="btn-primary">+ Add a Farm</button>
           <button id="download-app-btn" class="btn-ghost">📲 Download the Rigrow App</button>
+          ${shareButtonHTML('share-btn-home')}
+          ${shareFallbackHTML('share-fallback-home')}
         </div>
       </div>
     `
@@ -64,6 +67,7 @@ export async function renderHome(container, state, navigate) {
     })
 
     container.querySelector('#download-app-btn').addEventListener('click', () => navigate('download'))
+    attachShare(container.querySelector('.screen-home'), 'share-btn-home', 'share-fallback-home')
 
     container.querySelectorAll('.btn-field-delete').forEach(btn => {
       btn.addEventListener('click', () => {

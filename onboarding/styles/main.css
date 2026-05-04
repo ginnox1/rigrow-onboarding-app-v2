@@ -181,6 +181,13 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 }
 .field-card-actions { display: flex; align-items: center; gap: 8px; }
 .pending-note { font-size: 0.8rem; color: var(--muted); text-align: center; margin: 4px 0 12px; padding: 6px 12px; border: 1px dashed var(--border); border-radius: var(--radius); }
+.share-trigger { width: 100%; }
+.share-fallback { display: flex; gap: 8px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
+.share-pill { display: inline-flex; align-items: center; justify-content: center; padding: 7px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; border: none; transition: opacity 0.15s; }
+.share-pill:active { opacity: 0.75; }
+.share-pill-wa  { background: #25D366; color: #fff; }
+.share-pill-sms { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.share-pill-copy { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
 .btn-field-delete {
   background: none; border: 1px solid var(--border); border-radius: 4px;
   color: var(--muted); font-size: 0.85rem; padding: 3px 7px; cursor: pointer;

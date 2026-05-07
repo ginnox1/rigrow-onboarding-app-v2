@@ -13,6 +13,10 @@ const PREFIX_TO_ISO = {
   '+251': 'et', '+254': 'ke', '+256': 'ug', '+255': 'tz', '+250': 'rw'
 }
 
+function regionDisplayKey(r) {
+  return `region_${r.toLowerCase().replace(/[^a-z]+/g, '_').replace(/_$/, '')}`
+}
+
 function locationFields(prefix, lang, state) {
   const savedRegion = state?.region ?? ''
   const savedWoreda = state?.woreda ?? ''
@@ -20,8 +24,8 @@ function locationFields(prefix, lang, state) {
     return `
       <label>${t('region_label', lang)}
         <select id="region-select" required>
-          <option value="">— Select —</option>
-          ${ET_REGIONS.map(r => `<option value="${r}"${r === savedRegion ? ' selected' : ''}>${r}</option>`).join('')}
+          <option value="">${t('select_placeholder', lang)}</option>
+          ${ET_REGIONS.map(r => `<option value="${r}"${r === savedRegion ? ' selected' : ''}>${t(regionDisplayKey(r), lang)}</option>`).join('')}
         </select>
       </label>
       <label>${t('woreda_label', lang)}

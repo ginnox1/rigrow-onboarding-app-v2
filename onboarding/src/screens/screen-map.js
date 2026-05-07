@@ -9,6 +9,18 @@ import { importPMTiles, listLocalMaps, getMapSource } from '../offlineMap.js'
 
 const CROPS = ['Barley','Broccoli','Cabbage','Garlic','Kale','Lentils','Maize','Onion','Pepper','Potato','Sorghum','Sweet Potato','Teff','Tomato','Wheat','Other']
 
+const RELATIVE_DATES = [
+  { offset: 14,  key: 'rel_in_2_weeks' },
+  { offset: 7,   key: 'rel_in_1_week' },
+  { offset: 0,   key: 'rel_this_week' },
+  { offset: -7,  key: 'rel_1_week_ago' },
+  { offset: -14, key: 'rel_2_weeks_ago' },
+  { offset: -21, key: 'rel_3_weeks_ago' },
+  { offset: -28, key: 'rel_4_weeks_ago' },
+  { offset: -35, key: 'rel_5_weeks_ago' },
+  { offset: -42, key: 'rel_6_weeks_ago' },
+]
+
 const MAP_CENTRES = {
   '+251': [38.7578, 9.0192],
   '09':   [38.7578, 9.0192],
@@ -196,7 +208,7 @@ export async function renderMap(container, state, navigate) {
           </label>
           <label class="crop-select-label">${t('crop_label', lang)}
             <select id="crop-select">
-              <option value="">— Select —</option>
+              <option value="">${t('select_placeholder', lang)}</option>
               ${CROPS.map(c => {
                 const val = c.toLowerCase()
                 const key = `crop_${val.replace(/ /g, '_')}`
@@ -207,9 +219,13 @@ export async function renderMap(container, state, navigate) {
         </div>
         <p class="hint-text">${t('field_id_hint', lang)}</p>
         <div id="other-crop-group" class="${restoredSelect === 'other' ? '' : 'hidden'}">
-          <label>${t('other_crop_label', lang)}<input id="other-crop-input" type="text" placeholder="e.g. Pepper" value="${restoredOther}" /></label>
+          <label>${t('other_crop_label', lang)}<input id="other-crop-input" type="text" placeholder="${t('crop_other_placeholder', lang)}" value="${restoredOther}" /></label>
         </div>
         <label>${t('planting_date_full', lang)}
+          <select id="relative-date-select">
+            <option value="">${t('rel_date_prompt', lang)}</option>
+            ${RELATIVE_DATES.map(({offset, key}) => `<option value="${offset}">${t(key, lang)}</option>`).join('')}
+          </select>
           <input id="date-input" type="date"
             min="${toDateStr(minDate)}" max="${toDateStr(maxDate)}"
             value="${state?.plantingDate ?? ''}" />
@@ -417,8 +433,23 @@ export async function renderMap(container, state, navigate) {
     checkReady()
   })
 
+  container.querySelector('#relative-date-select').addEventListener('change', e => {
+    if (!e.target.value) return
+    const d = new Date()
+    d.setDate(d.getDate() + parseInt(e.target.value))
+    const dateStr = d.toISOString().slice(0, 10)
+    const minStr = toDateStr(minDate)
+    const maxStr = toDateStr(maxDate)
+    container.querySelector('#date-input').value =
+      dateStr < minStr ? minStr : dateStr > maxStr ? maxStr : dateStr
+    checkReady()
+  })
+
   container.addEventListener('input', e => {
-    if (['other-crop-input', 'area-input', 'date-input'].includes(e.target.id)) checkReady()
+    if (['other-crop-input', 'area-input', 'date-input'].includes(e.target.id)) {
+      if (e.target.id === 'date-input') container.querySelector('#relative-date-select').value = ''
+      checkReady()
+    }
   })
 
   // Evaluate pre-filled values immediately so the Continue button state is correct on load

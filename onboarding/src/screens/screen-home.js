@@ -25,14 +25,14 @@ export async function renderHome(container, state, navigate) {
       ? `<p class="empty-state">${t('no_fields_yet', lang)}</p>`
       : fields.map(f => {
           const crop = cropFromName(f.name)
-          const params = new URLSearchParams({ hectares: f.A, crop, lang })
+          const params = new URLSearchParams({ hectares: f.A, crop, lang, embed: '1' })
           const calcUrl = `${CALC_URL}?${params}`
           const pendingBadge = f.pending
             ? `<span class="field-pending-badge">${t('field_syncing', lang)}</span>`
             : ''
           const typeBadge = f.registrationType === 'pin'
-            ? `<span class="field-type-badge field-type-pin">📍 Pin</span>`
-            : `<span class="field-type-badge field-type-boundary">🗺️ Boundary</span>`
+            ? `<span class="field-type-badge field-type-pin">📍 ${t('field_type_pin', lang)}</span>`
+            : `<span class="field-type-badge field-type-boundary">🗺️ ${t('field_type_boundary', lang)}</span>`
           const deleteBtn = f.pending
             ? `<button class="btn-field-delete" data-field-id="${f.id}" title="${t('delete_field', lang)}">✕</button>`
             : ''
@@ -54,9 +54,9 @@ export async function renderHome(container, state, navigate) {
 
     const upgradeCard = hasPinFields ? `
       <div class="upgrade-card">
-        <h3>⬆️ Upgrade for Precision Advice</h3>
-        <p>Select your pinned field above to upgrade to precision advice. You will get — daily irrigation advice, accurate weather data, and crop insights.</p>
-        <button id="upgrade-btn" class="btn-primary" disabled>Upgrade</button>
+        <h3>${t('upgrade_title', lang)}</h3>
+        <p>${t('upgrade_desc', lang)}</p>
+        <button id="upgrade-btn" class="btn-primary" disabled>${t('upgrade_btn', lang)}</button>
       </div>
     ` : ''
 
@@ -65,12 +65,12 @@ export async function renderHome(container, state, navigate) {
       <div class="screen screen-home">
         <h2>${t('welcome_back', lang, { name })}</h2>
         <div class="fields-list">${fieldCards}</div>
-        ${hasPending ? `<p class="pending-note">You can delete a pending field before it syncs. Sync completes in about 10 minutes.</p>` : ''}
+        ${hasPending ? `<p class="pending-note">${t('pending_note', lang)}</p>` : ''}
         ${upgradeCard}
-        <p class="teaser">Unlock field-level insights</p>
+        <p class="teaser">${t('teaser_unlock', lang)}</p>
         <div class="cta-group">
-          <button id="add-farm-btn" class="btn-primary">+ Add a Farm</button>
-          <button id="download-app-btn" class="btn-ghost">📲 Download the Rigrow App</button>
+          <button id="add-farm-btn" class="btn-primary">${t('add_farm', lang)}</button>
+          <button id="download-app-btn" class="btn-ghost">${t('download_app_rigrow', lang)}</button>
           ${shareButtonHTML('share-btn-home')}
           ${shareFallbackHTML('share-fallback-home')}
         </div>

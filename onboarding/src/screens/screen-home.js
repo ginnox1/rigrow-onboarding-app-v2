@@ -1,7 +1,7 @@
 import { t } from '../i18n.js'
 import { saveState } from '../storage.js'
 import { fetchUserConfig } from '../userLookup.js'
-import { dequeueField } from '../crm.js'
+import { dequeueField, flushQueue } from '../crm.js'
 import { shareButtonHTML, shareFallbackHTML, attachShare } from '../share.js'
 
 const CALC_URL = 'https://rigrow-calc.quanomics.com'
@@ -150,12 +150,20 @@ export async function renderHome(container, state, navigate) {
 
   render(state?.userConfig)
 
-  // When the 5-min window closes, re-render in place to drop the badge — no navigation, no state change
+  // Poll every 10 s while pending fields exist — reliable on mobile, handles backgrounding
   const pendingWithTime = (state?.userConfig?.fields ?? []).filter(f => f.pending && f.pendingAt)
   if (pendingWithTime.length) {
-    const earliestAt = Math.min(...pendingWithTime.map(f => f.pendingAt))
-    const msLeft = PENDING_TTL - (Date.now() - earliestAt)
-    if (msLeft > 0) setTimeout(() => { if (container.isConnected) render(state?.userConfig) }, msLeft + 200)
+    const tid = setInterval(() => {
+      if (!container.isConnected) { clearInterval(tid); return }
+      const expired = (state?.userConfig?.fields ?? []).some(
+        f => f.pending && f.pendingAt && (Date.now() - f.pendingAt) >= PENDING_TTL
+      )
+      if (expired) {
+        clearInterval(tid)
+        render(state?.userConfig)
+        if (navigator.onLine) flushQueue().catch(() => {})
+      }
+    }, 10_000)
   }
 
   if (state?.phone && navigator.onLine) {

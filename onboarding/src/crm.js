@@ -12,7 +12,7 @@ async function getQueueDB() {
   })
 }
 
-export const FIELD_HOLD_MS = 10 * 60 * 1000
+export const FIELD_HOLD_MS = 5 * 60 * 1000
 
 async function enqueue(payload) {
   const db = await getQueueDB()

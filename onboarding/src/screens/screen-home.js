@@ -5,6 +5,7 @@ import { dequeueField } from '../crm.js'
 import { shareButtonHTML, shareFallbackHTML, attachShare } from '../share.js'
 
 const CALC_URL = 'https://rigrow-calc.quanomics.com'
+const PENDING_TTL = 5 * 60 * 1000
 
 function cropFromName(name = '') {
   const lastWord = name.trim().split(/\s+/).pop() || ''
@@ -27,17 +28,18 @@ export async function renderHome(container, state, navigate) {
           const crop = cropFromName(f.name)
           const params = new URLSearchParams({ hectares: f.A, crop, lang, embed: '1' })
           const calcUrl = `${CALC_URL}?${params}`
-          const pendingBadge = f.pending
+          const isActivePending = f.pending && f.pendingAt && (Date.now() - f.pendingAt) < PENDING_TTL
+          const pendingBadge = isActivePending
             ? `<span class="field-pending-badge">${t('field_syncing', lang)}</span>`
             : ''
           const typeBadge = f.registrationType === 'pin'
             ? `<span class="field-type-badge field-type-pin">📍 ${t('field_type_pin', lang)}</span>`
             : `<span class="field-type-badge field-type-boundary">🗺️ ${t('field_type_boundary', lang)}</span>`
-          const deleteBtn = f.pending
+          const deleteBtn = isActivePending
             ? `<button class="btn-field-delete" data-field-id="${f.id}" title="${t('delete_field', lang)}">✕</button>`
             : ''
           return `
-            <div class="field-card${f.pending ? ' field-card-pending' : ''}" data-field-id="${f.id}" data-reg-type="${f.registrationType ?? ''}">
+            <div class="field-card${isActivePending ? ' field-card-pending' : ''}" data-field-id="${f.id}" data-reg-type="${f.registrationType ?? ''}">
               <div class="field-info">
                 <strong>${f.name ?? 'Field'}</strong>
                 <span>${f.A} Ha</span>
@@ -60,7 +62,7 @@ export async function renderHome(container, state, navigate) {
       </div>
     ` : ''
 
-    const hasPending = fields.some(f => f.pending)
+    const hasPending = fields.some(f => f.pending && f.pendingAt && (Date.now() - f.pendingAt) < PENDING_TTL)
     container.innerHTML = `
       <div class="screen screen-home">
         <h2>${t('welcome_back', lang, { name })}</h2>
@@ -147,6 +149,14 @@ export async function renderHome(container, state, navigate) {
   }
 
   render(state?.userConfig)
+
+  // When the 5-min window closes, re-render in place to drop the badge — no navigation, no state change
+  const pendingWithTime = (state?.userConfig?.fields ?? []).filter(f => f.pending && f.pendingAt)
+  if (pendingWithTime.length) {
+    const earliestAt = Math.min(...pendingWithTime.map(f => f.pendingAt))
+    const msLeft = PENDING_TTL - (Date.now() - earliestAt)
+    if (msLeft > 0) setTimeout(() => { if (container.isConnected) render(state?.userConfig) }, msLeft + 200)
+  }
 
   if (state?.phone && navigator.onLine) {
     fetchUserConfig(state.phone, true).then(async fresh => {

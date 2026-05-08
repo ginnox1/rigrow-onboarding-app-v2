@@ -5,6 +5,7 @@ import { dequeueField } from '../crm.js'
 import { shareButtonHTML, shareFallbackHTML, attachShare } from '../share.js'
 
 const CALC_URL = 'https://rigrow-calc.quanomics.com'
+const PENDING_TTL = 5 * 60 * 1000
 
 function cropFromName(name = '') {
   const lastWord = name.trim().split(/\s+/).pop() || ''
@@ -13,6 +14,23 @@ function cropFromName(name = '') {
 
 export async function renderHome(container, state, navigate) {
   const lang = state?.language ?? 'en'
+  const now = Date.now()
+
+  // Expire pending fields whose 5-minute grace window has passed
+  const currentFields = state?.userConfig?.fields ?? []
+  const hasExpired = currentFields.some(
+    f => f.pending && f.pendingAt && (now - f.pendingAt) >= PENDING_TTL
+  )
+  if (hasExpired) {
+    const updatedFields = currentFields.map(f =>
+      (f.pending && f.pendingAt && (now - f.pendingAt) >= PENDING_TTL)
+        ? { ...f, pending: false }
+        : f
+    )
+    const updatedConfig = { ...state.userConfig, fields: updatedFields }
+    await saveState({ userConfig: updatedConfig })
+    state = { ...state, userConfig: updatedConfig }
+  }
 
   function render(userConfig) {
     const name = userConfig?.name ?? state?.name ?? ''
@@ -148,23 +166,32 @@ export async function renderHome(container, state, navigate) {
 
   render(state?.userConfig)
 
+  // Auto-clear badge when the TTL for the earliest pending field expires
+  const activePending = (state?.userConfig?.fields ?? []).filter(f => f.pending && f.pendingAt)
+  if (activePending.length) {
+    const earliestAt = Math.min(...activePending.map(f => f.pendingAt))
+    const msLeft = PENDING_TTL - (now - earliestAt) + 200
+    setTimeout(() => { if (container.isConnected) navigate('home') }, msLeft)
+  }
+
+  // Fetch fresh server data — preserve fields still within their pending window
   if (state?.phone && navigator.onLine) {
     fetchUserConfig(state.phone, true).then(async fresh => {
       if (!fresh) return
-      // Preserve optimistic pending fields not yet reflected on the server
-      const pending = (state?.userConfig?.fields ?? []).filter(f => f.pending)
-      if (pending.length) {
+      const stillPending = (state?.userConfig?.fields ?? []).filter(
+        f => f.pending && f.pendingAt && (Date.now() - f.pendingAt) < PENDING_TTL
+      )
+      if (stillPending.length) {
         const serverFields = fresh.fields ?? []
         const isMatch = (s, p) =>
           cropFromName(s.name).toLowerCase() === cropFromName(p.name).toLowerCase() &&
           Math.abs((s.A ?? 0) - (p.A ?? 0)) < 0.15
-        // Carry registrationType from matched pending field onto its server counterpart
         const mergedServer = serverFields.map(s => {
-          const matched = pending.find(p => isMatch(s, p))
+          const matched = stillPending.find(p => isMatch(s, p))
           return matched ? { ...s, registrationType: matched.registrationType } : s
         })
-        const stillPending = pending.filter(p => !serverFields.some(s => isMatch(s, p)))
-        fresh = { ...fresh, fields: [...mergedServer, ...stillPending] }
+        const notOnServer = stillPending.filter(p => !serverFields.some(s => isMatch(s, p)))
+        fresh = { ...fresh, fields: [...mergedServer, ...notOnServer] }
       }
       await saveState({ userConfig: fresh })
       render(fresh)

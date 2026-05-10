@@ -73,4 +73,8 @@ Plan for this.
 
 [  ] Check if bounding string matches, before revealing data. A privacy concern!
 
+[  ] mobile apk can be downloaded by direct link. In this case send the download to the CRM with 'From link' instead of phone nr.
+
+[  ] Pined farms are tagged as "boundary" farms on home page after refresh. Please revew how this is applied and fix. Pin arms only have one GPS coordinate. Bound famrs have 3 or more coordinates.
+
 [ ! ] How to show last calculated value on the field? This perfection at this stage post pone. [This is an OVERKILL]

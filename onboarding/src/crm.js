@@ -83,8 +83,8 @@ export function postAgentRequest({ phone, name, region, woreda, language, via })
   return postEvent({ event: 'agent_request', phone, name, region, woreda, language, via })
 }
 
-export function postDownloadView({ phone }) {
-  return postEvent({ event: 'app_download_view', phone })
+export function postDownloadView({ phone, source = 'app' }) {
+  return postEvent({ event: 'app_download_view', phone, source })
 }
 
 export async function clearQueue() {

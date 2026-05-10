@@ -1,8 +1,7 @@
 import { postDownloadView } from '../crm.js'
 import { APP_SCREENSHOTS } from '../app-screenshots.js'
 import { t } from '../i18n.js'
-
-const APK_PATH = `${window.location.origin}/apk-dowbload/RigrowMobileApp.apk`
+import { APK_DOWNLOAD_URL } from '../config.js'
 
 export async function renderDownload(container, state, navigate) {
   const lang = state?.language ?? 'en'
@@ -26,7 +25,7 @@ export async function renderDownload(container, state, navigate) {
         <strong>Note:</strong> You will need the userId sent to your SMS to login.
       </div>
 
-      <a href="${APK_PATH}" download="RigrowMobileApp.apk" class="btn-primary btn-download-apk" id="android-btn">▶ Download Android App</a>
+      <a href="${APK_DOWNLOAD_URL}?src=app" class="btn-primary btn-download-apk" id="android-btn">▶ Download Android App</a>
 
       <div class="download-requirements">
         <strong>Requirements</strong>

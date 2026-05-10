@@ -65,10 +65,13 @@ function doPost(e) {
 
     } else if (p.event === 'app_download_view') {
       var dsh = ss.getSheetByName('APK Downloads') || ss.insertSheet('APK Downloads');
+      var dlHeader = ['Timestamp','Phone','Source'];
       if (dsh.getLastRow() === 0) {
-        dsh.appendRow(['Timestamp','Phone']);
+        dsh.appendRow(dlHeader);
+      } else if (dsh.getRange(1, 1, 1, dsh.getLastColumn()).getValues()[0].length < dlHeader.length) {
+        dsh.getRange(1, 1, 1, dlHeader.length).setValues([dlHeader]);
       }
-      dsh.appendRow([p.timestamp, p.phone || '']);
+      dsh.appendRow([p.timestamp, p.phone || '', p.source || '']);
     }
 
     return ContentService

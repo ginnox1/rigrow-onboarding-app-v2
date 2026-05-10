@@ -169,21 +169,20 @@ export async function renderHome(container, state, navigate) {
   if (state?.phone && navigator.onLine) {
     fetchUserConfig(state.phone, true).then(async fresh => {
       if (!fresh) return
-      // Preserve optimistic pending fields not yet reflected on the server
-      const pending = (state?.userConfig?.fields ?? []).filter(f => f.pending)
-      if (pending.length) {
-        const serverFields = fresh.fields ?? []
-        const isMatch = (s, p) =>
-          cropFromName(s.name).toLowerCase() === cropFromName(p.name).toLowerCase() &&
-          Math.abs((s.A ?? 0) - (p.A ?? 0)) < 0.15
-        // Carry registrationType from matched pending field onto its server counterpart
-        const mergedServer = serverFields.map(s => {
-          const matched = pending.find(p => isMatch(s, p))
-          return matched ? { ...s, registrationType: matched.registrationType } : s
-        })
-        const stillPending = pending.filter(p => !serverFields.some(s => isMatch(s, p)))
-        fresh = { ...fresh, fields: [...mergedServer, ...stillPending] }
-      }
+      const localFields = state?.userConfig?.fields ?? []
+      const pending = localFields.filter(f => f.pending)
+      const serverFields = fresh.fields ?? []
+      const isMatch = (s, l) =>
+        cropFromName(s.name).toLowerCase() === cropFromName(l.name).toLowerCase() &&
+        Math.abs((s.A ?? 0) - (l.A ?? 0)) < 0.15
+      // Carry registrationType from any local field when server omits it
+      const mergedServer = serverFields.map(s => {
+        if (s.registrationType) return s
+        const local = localFields.find(l => isMatch(s, l))
+        return local ? { ...s, registrationType: local.registrationType } : s
+      })
+      const stillPending = pending.filter(p => !serverFields.some(s => isMatch(s, p)))
+      fresh = { ...fresh, fields: [...mergedServer, ...stillPending] }
       await saveState({ userConfig: fresh })
       render(fresh)
     }).catch(() => {})

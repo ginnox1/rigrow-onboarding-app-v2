@@ -420,7 +420,7 @@ const strings = {
     bound_feat_enterprise: 'የድርጅት ዳሽቦርድ (ያነጋግሩን)',
     bound_existing_note: 'መለያዎ የድንበር ካርታን ይጠቀማል — አዳዲስ ማሳዎች ተመሳሳይ ዘዴን ይከተላሉ።',
     bound_unavailable_title: 'የድንበር ካርታ እስካሁን በአገርዎ አይገኝም።',
-    bound_unavailable_note: 'እስከዚያው ድረስ፣ በነጻ አገልግሎቶቻችን ይደሰቱ — የአየር ሁኔታ እና የአፈር መረጃዎችን ለማግኘት እርሻዎን ፒን ያድርጉ።',
+    bound_unavailable_note: 'እስከዚያው ድረስ፣ በነጻ አገልግሎቶቻችን ይጠቀሙ — የአየር ሁኔታ እና የአፈር መረጃዎችን ለማግኘት እርሻዎን ፒን ያድርጉ።',
     // Map form
     change_method: '← ዘዴ ቀይር',
     load_map_file: 'የካርታ ፋይል ይጫኑ',
@@ -460,7 +460,7 @@ const strings = {
     rel_5_weeks_ago: 'ከ5 ሳምንት በፊት',
     rel_6_weeks_ago: 'ከ6 ሳምንት በፊት',
     // Complete
-    view_my_fields: 'ማሳዎቼን ይመልከቱ →',
+    view_my_fields: 'ማሳዎን ይመልከቱ →',
     field_sync_note: 'ጥያቄዎ ገብቷል። የግንኙነት አውታረ መረብ ሲገኝ የማሳ መረጃ ይመሳሰላል።',
     // Home — field management
     field_syncing: 'እየተሳሰለ ነው…',
@@ -469,20 +469,20 @@ const strings = {
     delete_field_msg: '"{name}"ን ሰርዝ — ይህ ሊቀለበስ አይችልም።',
     delete_confirm: 'አዎ፣ ሰርዝ',
     delete_cancel: 'ያቆዩት',
-    pending_note: 'ማሳዎ በቅርቡ ይሳሰላል — ብዙውን ጊዜ በአንድ ወይም ሁለት ደቂቃ ውስጥ። ከተረጋገጠ በፊት የሚጠባበቅ ማሳን ሊሰርዙ ይችላሉ።',
+    pending_note: 'ማሳዎ በቅርቡ ይሳሰላል — ብዙውን ጊዜ በአንድ ወይም ሁለት ደቂቃ ውስጥ። ከመረጋገጡ በፊት ማሳ መሰረዝ ይችላሉ።',
     // Home — general
     teaser_unlock: 'የማሳ ደረጃ መረጃዎችን ይክፈቱ',
     add_farm: '+ እርሻ ያክሉ',
     download_app_rigrow: '📲 የRigrow መተግበሪያ ያውርዱ',
     upgrade_title: '⬆️ ለጥራት ምክር ያሻሽሉ',
-    upgrade_desc: 'ወደ ጥራት ምክር ለማሻሻል ከላይ ያለዎትን የፒን ማሳ ይምረጡ። ዕለታዊ የመስኖ ምክር፣ ትክክለኛ የአየር ሁኔታ ውሂብ እና የሰብል መረጃዎችን ያገኛሉ።',
+    upgrade_desc: 'ወደ ተሟላ ምክር ለማሻሻል ከላይ ያለዎትን የፒን ማሳ ይምረጡ። ዕለታዊ የመስኖ ምክር፣ ትክክለኛ የአየር ሁኔታ ውሂብ እና የሰብል መረጃዎችን ያገኛሉ።',
     upgrade_btn: 'አሻሽሉ',
     field_type_pin: 'ፒን',
     field_type_boundary: 'ድንበር',
     // Crops
     crop_barley: 'ገብስ',
     crop_broccoli: 'ብሮኮሊ',
-    crop_cabbage: 'ካቦ',
+    crop_cabbage: 'ጥቅል ጎመን',
     crop_garlic: 'ነጭ ሽንኩርት',
     crop_kale: 'ጎምን',
     crop_lentils: 'ምስር',

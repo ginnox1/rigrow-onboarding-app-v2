@@ -379,22 +379,26 @@ export async function renderMap(container, state, navigate) {
   } else {
     const draw = attachDraw(map)
     const guideEl = container.querySelector('#draw-guide')
-    const mapContainerEl = container.querySelector('#map-container')
-    let vertexCount = 0
+    let guideUpdated = false
 
     guideEl.textContent = t('draw_guide_start', lang)
     guideEl.classList.remove('hidden')
 
-    // map.on('click') is intercepted by Mapbox GL Draw — count raw DOM clicks instead
-    mapContainerEl.addEventListener('click', () => {
-      if (polygon) return
-      vertexCount++
-      if (vertexCount === 3) guideEl.textContent = t('draw_guide_close', lang)
+    // draw.render fires after every store change (vertex placed OR mouse move).
+    // The in-progress polygon is in draw.getAll(); its ring grows by 1 per click
+    // plus 1 trailing cursor-follower, so ring.length >= 4 means 3 vertices placed.
+    map.on('draw.render', () => {
+      if (guideUpdated || polygon) return
+      const ring = draw.getAll().features[0]?.geometry?.coordinates?.[0]
+      if (ring && ring.length >= 4) {
+        guideUpdated = true
+        guideEl.textContent = t('draw_guide_close', lang)
+      }
     })
 
     function resetDraw() {
       polygon = null
-      vertexCount = 0
+      guideUpdated = false
       guideEl.textContent = t('draw_guide_start', lang)
       guideEl.classList.remove('hidden')
       container.querySelector('#area-input').value = ''

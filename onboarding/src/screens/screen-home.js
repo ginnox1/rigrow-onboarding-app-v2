@@ -6,7 +6,8 @@ import { shareButtonHTML, shareFallbackHTML, attachShare } from '../share.js'
 import { track } from '../analytics.js'
 
 const CALC_URL = 'https://rigrow-calc.quanomics.com'
-const PENDING_TTL = 5 * 60 * 1000
+const PENDING_TTL = 60 * 1000
+const B1_MAX_FIELDS = 5
 
 function cropFromName(name = '') {
   const lastWord = name.trim().split(/\s+/).pop() || ''
@@ -55,6 +56,9 @@ export async function renderHome(container, state, navigate) {
           `
         }).join('')
 
+    const hasPending = fields.some(f => f.pending && f.pendingAt && (Date.now() - f.pendingAt) < PENDING_TTL)
+    const isAtLimit = userConfig?.projectId === 'B1' && fields.length >= B1_MAX_FIELDS
+
     const upgradeCard = hasPinFields ? `
       <div class="upgrade-card">
         <h3>${t('upgrade_title', lang)}</h3>
@@ -63,7 +67,6 @@ export async function renderHome(container, state, navigate) {
       </div>
     ` : ''
 
-    const hasPending = fields.some(f => f.pending && f.pendingAt && (Date.now() - f.pendingAt) < PENDING_TTL)
     container.innerHTML = `
       <div class="screen screen-home">
         <h2>${t('welcome_back', lang, { name })}</h2>
@@ -72,7 +75,7 @@ export async function renderHome(container, state, navigate) {
         ${upgradeCard}
         <p class="teaser">${t('teaser_unlock', lang)}</p>
         <div class="cta-group">
-          <button id="add-farm-btn" class="btn-primary">${t('add_farm', lang)}</button>
+          <button id="add-farm-btn" class="btn-primary${isAtLimit ? ' btn-at-limit' : ''}" ${hasPending ? 'disabled' : ''}>${t('add_farm', lang)}</button>
           <button id="download-app-btn" class="btn-ghost">${t('download_app_rigrow', lang)}</button>
           ${shareButtonHTML('share-btn-home')}
           ${shareFallbackHTML('share-fallback-home')}
@@ -84,6 +87,7 @@ export async function renderHome(container, state, navigate) {
     container.querySelectorAll('.field-card').forEach(card => {
       card.addEventListener('click', e => {
         if (e.target.closest('.btn-field-delete') || e.target.closest('.btn-calc')) return
+        if (hasPending) return
         const fieldId = card.dataset.fieldId
         if (selectedFieldId === fieldId) {
           selectedFieldId = null
@@ -103,6 +107,7 @@ export async function renderHome(container, state, navigate) {
 
     // Upgrade button
     container.querySelector('#upgrade-btn')?.addEventListener('click', async () => {
+      if (hasPending) return
       const sel = fields.find(f => f.id === selectedFieldId)
       if (!sel || sel.registrationType !== 'pin') return
       await saveState({ fieldMode: null, upgradeField: { name: sel.name } })
@@ -110,6 +115,22 @@ export async function renderHome(container, state, navigate) {
     })
 
     container.querySelector('#add-farm-btn').addEventListener('click', async () => {
+      if (isAtLimit) {
+        const overlay = document.createElement('div')
+        overlay.className = 'modal-overlay'
+        overlay.innerHTML = `
+          <div class="modal-box">
+            <div class="modal-icon">🌾</div>
+            <h3>${t('limit_reached_title', lang)}</h3>
+            <p>${t('limit_reached_msg', lang)}</p>
+            <button id="limit-close-btn" class="btn-primary">${t('limit_reached_btn', lang)}</button>
+          </div>
+        `
+        document.body.appendChild(overlay)
+        overlay.querySelector('#limit-close-btn').addEventListener('click', () => overlay.remove())
+        overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove() })
+        return
+      }
       await saveState({ fieldMode: null, upgradeField: null })
       navigate('map')
     })

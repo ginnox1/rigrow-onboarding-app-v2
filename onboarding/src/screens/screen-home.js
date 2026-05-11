@@ -3,6 +3,7 @@ import { saveState } from '../storage.js'
 import { fetchUserConfig } from '../userLookup.js'
 import { dequeueField, flushQueue } from '../crm.js'
 import { shareButtonHTML, shareFallbackHTML, attachShare } from '../share.js'
+import { track } from '../analytics.js'
 
 const CALC_URL = 'https://rigrow-calc.quanomics.com'
 const PENDING_TTL = 5 * 60 * 1000
@@ -183,6 +184,7 @@ export async function renderHome(container, state, navigate) {
       })
       const stillPending = pending.filter(p => !serverFields.some(s => isMatch(s, p)))
       fresh = { ...fresh, fields: [...mergedServer, ...stillPending] }
+      track('home_fields_refresh', { field_count: fresh.fields.length })
       await saveState({ userConfig: fresh })
       render(fresh)
     }).catch(() => {})

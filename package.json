@@ -3,7 +3,9 @@
   "private": true,
   "version": "0.2.10",
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev:pwa": "vite --host",
     "build:pwa": "vite build",
@@ -13,6 +15,7 @@
     "@mapbox/mapbox-gl-draw": "^1.5.1",
     "@turf/area": "^7.3.5",
     "@turf/kinks": "^7.3.5",
+    "@vercel/analytics": "^2.0.1",
     "idb": "^8.0.0",
     "mapbox-gl": "^3.22.0",
     "pmtiles": "^4.4.1"

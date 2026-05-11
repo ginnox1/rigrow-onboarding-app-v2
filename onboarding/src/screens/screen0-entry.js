@@ -1,6 +1,7 @@
 import { saveState } from '../storage.js'
 import { fetchUserConfig } from '../userLookup.js'
 import { t, LANGUAGES } from '../i18n.js'
+import { track } from '../analytics.js'
 
 const PREFIXES = [
   { code: '+251', label: 'ET +251', langMatch: ['am', 'om'] },
@@ -69,6 +70,7 @@ export async function renderEntry(container, state, navigate) {
     errorEl.classList.add('hidden')
 
     const phone = selectedPrefix + local
+    track('login_form_submitted', { country_code: selectedPrefix })
     await saveState({ phone, localPhone: local, phonePrefix: selectedPrefix })
 
     if (!navigator.onLine) {

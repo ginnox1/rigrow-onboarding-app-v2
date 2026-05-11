@@ -1,6 +1,7 @@
 import { getState, saveState } from './storage.js'
 import { checkAgentTTL, timeAgo, verifyAgent, revokeAgent } from './agent.js'
 import { flushQueue, clearQueue } from './crm.js'
+import { initAnalytics, track } from './analytics.js'
 
 import { renderEntry }      from './screens/screen0-entry.js'
 import { renderRegister }   from './screens/screen-register.js'
@@ -32,6 +33,7 @@ async function navigate(screenName) {
   await saveState({ screen: screenName })
   const state = await getState()
   renderAgentBanner(state)
+  track('screen_view', { screen: screenName })
   const renderer = SCREENS[screenName]
   if (!renderer) { console.error('Unknown screen:', screenName); return }
   app.innerHTML = ''
@@ -115,6 +117,7 @@ function initFooter() {
 }
 
 async function boot() {
+  initAnalytics()
   initTheme()
   initFooter()
   await checkAgentTTL(showToast).catch(() => {})

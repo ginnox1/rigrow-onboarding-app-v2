@@ -1,7 +1,7 @@
 import { saveState } from '../storage.js'
 import { postLead } from '../crm.js'
 import { t } from '../i18n.js'
-import { searchWoredas, getCoords } from '../localeSearch.js'
+import { searchWoredas, listWoredas, getCoords } from '../localeSearch.js'
 
 const ET_REGIONS = [
   'Addis Ababa','Afar','Amhara','Benishangul-Gumuz','Dire Dawa',
@@ -29,8 +29,9 @@ function locationFields(prefix, lang, state) {
         </select>
       </label>
       <label>${t('woreda_label', lang)}
-        <div class="autocomplete-wrap">
+        <div class="autocomplete-wrap autocomplete-has-browse">
           <input id="woreda-input" type="text" autocomplete="off" required value="${savedWoreda}" />
+          <button id="woreda-browse-btn" class="btn-browse" type="button" title="${t('woreda_browse_btn', lang)}">☰</button>
           <div class="autocomplete-list hidden" id="woreda-ac"></div>
         </div>
       </label>
@@ -207,6 +208,65 @@ export async function renderRegister(container, state, navigate) {
     const locInput = document.getElementById('location-input')
     const locAc = document.getElementById('location-ac')
     attachAutocomplete(locInput, locAc, () => null, iso, onSelect, lang, validate)
+  }
+
+  if (prefix === '+251') {
+    document.getElementById('woreda-browse-btn').addEventListener('click', async () => {
+      const region = document.getElementById('region-select')?.value ?? ''
+      const items = await listWoredas(iso, region, lang)
+      const woredaInput = document.getElementById('woreda-input')
+
+      const overlay = document.createElement('div')
+      overlay.className = 'woreda-picker-overlay'
+      overlay.innerHTML = `
+        <div class="woreda-picker">
+          <div class="woreda-picker-header">
+            <span class="woreda-picker-title">${t('woreda_picker_title', lang)}${region ? ` — ${region}` : ''}</span>
+            <button class="woreda-picker-close" type="button">✕</button>
+          </div>
+          <div class="woreda-picker-search">
+            <input id="woreda-picker-filter" type="search" placeholder="${t('woreda_picker_filter', lang)}" autocomplete="off" />
+          </div>
+          <div class="woreda-picker-list"></div>
+        </div>
+      `
+      document.body.appendChild(overlay)
+
+      const listEl = overlay.querySelector('.woreda-picker-list')
+      const filterEl = overlay.querySelector('#woreda-picker-filter')
+      let visible = items
+
+      function renderItems(list) {
+        listEl.innerHTML = list.map((item, i) =>
+          `<div class="woreda-picker-item" data-idx="${i}">${item.name}</div>`
+        ).join('')
+      }
+      renderItems(items)
+
+      filterEl.addEventListener('input', () => {
+        const q = filterEl.value.toLowerCase()
+        visible = q
+          ? items.filter(it => it.name.toLowerCase().includes(q) || it.canonical.toLowerCase().includes(q))
+          : items
+        renderItems(visible)
+      })
+
+      function pick(item) {
+        woredaInput.value = item.name
+        woredaInput.dataset.canonical = item.canonical
+        onSelect(item)
+        validate()
+        overlay.remove()
+      }
+
+      listEl.addEventListener('click', e => {
+        const el = e.target.closest('.woreda-picker-item')
+        if (el) pick(visible[parseInt(el.dataset.idx)])
+      })
+      overlay.querySelector('.woreda-picker-close').addEventListener('click', () => overlay.remove())
+      overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove() })
+      setTimeout(() => filterEl.focus(), 80)
+    })
   }
 
   validate() // set initial button state

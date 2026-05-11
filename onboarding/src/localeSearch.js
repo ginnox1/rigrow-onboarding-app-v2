@@ -26,6 +26,21 @@ export async function getCoords(canonicalName) {
   return c ? { lat: c[0], lon: c[1] } : null
 }
 
+export async function listWoredas(iso, region, lang = 'en') {
+  const [names, coords] = await Promise.all([loadNames(), loadCoords()])
+  const countryData = names[iso]
+  if (!countryData) return []
+  const list = (region && countryData[region]) ? countryData[region] : Object.values(countryData).flat()
+  return list
+    .map(entry => {
+      const { en, am, om } = parseEntry(entry)
+      const display = (lang === 'am' && am) ? am : (lang === 'om' && om) ? om : en
+      const c = coords[en]
+      return { name: display, canonical: en, lat: c?.[0] ?? null, lon: c?.[1] ?? null }
+    })
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
 export async function searchWoredas(query, countryISO, region, lang = 'en') {
   if (!query || query.length < 2) return []
   const [names, coords] = await Promise.all([loadNames(), loadCoords()])

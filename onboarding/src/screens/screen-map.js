@@ -194,6 +194,7 @@ export async function renderMap(container, state, navigate) {
         <span id="gps-status" class="gps-status"></span>
       </div>
       <div id="map-container"></div>
+      <div id="draw-guide" class="draw-guide hidden"></div>
       <div class="map-form">
         <label>${t('area_label_full', lang)}
           <input id="area-input" type="number" min="0.5" step="0.1"
@@ -374,10 +375,26 @@ export async function renderMap(container, state, navigate) {
     })
   } else {
     const draw = attachDraw(map)
+    const guideEl = container.querySelector('#draw-guide')
+    let drawingStarted = false
+
+    guideEl.textContent = t('draw_guide_start', lang)
+    guideEl.classList.remove('hidden')
+
+    map.on('click', () => {
+      if (!drawingStarted && !polygon) {
+        drawingStarted = true
+        guideEl.textContent = t('draw_guide_close', lang)
+      }
+    })
+
     map.on('draw.create', updateBoundary)
     map.on('draw.update', updateBoundary)
     map.on('draw.delete', () => {
       polygon = null
+      drawingStarted = false
+      guideEl.textContent = t('draw_guide_start', lang)
+      guideEl.classList.remove('hidden')
       container.querySelector('#area-input').value = ''
       container.querySelector('#area-warning').classList.add('hidden')
       checkReady()
@@ -391,6 +408,7 @@ export async function renderMap(container, state, navigate) {
         return
       }
       polygon = feat
+      guideEl.classList.add('hidden')
       const ha = calcHectares(feat)
       container.querySelector('#area-input').value = ha.toFixed(2)
       const warn = container.querySelector('#area-warning')

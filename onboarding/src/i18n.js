@@ -97,6 +97,7 @@ const strings = {
     woreda_picker_title: 'Select Woreda',
     woreda_picker_filter: 'Filter...',
     woreda_browse_btn: 'Browse',
+    clear_boundary_title: 'Clear and start over',
     draw_guide_start: 'Tap around your farm boundary',
     draw_guide_close: 'Tap the first point ⬤ to close',
     hint_drop_pin: 'Drop a pin on the map to continue',

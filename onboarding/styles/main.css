@@ -147,6 +147,14 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 
 /* ── Map ─────────────────────────────────────────────────────── */
 #map-container { height: 360px; border-radius: var(--radius); overflow: hidden; }
+.area-input-row { display: flex; gap: 6px; align-items: center; }
+.area-input-row input { flex: 1; min-width: 0; }
+.btn-clear-draw {
+  flex-shrink: 0; padding: 0 10px; height: 40px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--muted); font-size: 1.1rem; cursor: pointer;
+}
+.btn-clear-draw:hover { background: #fff0f0; border-color: var(--red); color: var(--red); }
 .draw-guide {
   background: var(--green-light); color: var(--green);
   border: 1px solid var(--green);

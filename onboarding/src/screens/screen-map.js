@@ -197,10 +197,13 @@ export async function renderMap(container, state, navigate) {
       <div id="draw-guide" class="draw-guide hidden"></div>
       <div class="map-form">
         <label>${t('area_label_full', lang)}
-          <input id="area-input" type="number" min="0.5" step="0.1"
-            ${fieldMode === 'boundary' ? 'readonly' : ''}
-            placeholder="Ha"
-            value="${fieldMode === 'pin' && state?.hectares ? state.hectares : ''}" />
+          <div class="${fieldMode === 'boundary' ? 'area-input-row' : ''}">
+            <input id="area-input" type="number" min="0.5" step="0.1"
+              ${fieldMode === 'boundary' ? 'readonly' : ''}
+              placeholder="Ha"
+              value="${fieldMode === 'pin' && state?.hectares ? state.hectares : ''}" />
+            ${fieldMode === 'boundary' ? `<button id="clear-boundary-btn" class="btn-clear-draw" type="button" title="${t('clear_boundary_title', lang)}">↺</button>` : ''}
+          </div>
         </label>
         <div id="area-warning" class="error-text hidden">${t('area_too_small', lang)}</div>
         <div class="crop-prefix-row">
@@ -376,28 +379,37 @@ export async function renderMap(container, state, navigate) {
   } else {
     const draw = attachDraw(map)
     const guideEl = container.querySelector('#draw-guide')
-    let drawingStarted = false
+    const mapContainerEl = container.querySelector('#map-container')
+    let vertexCount = 0
 
     guideEl.textContent = t('draw_guide_start', lang)
     guideEl.classList.remove('hidden')
 
-    map.on('click', () => {
-      if (!drawingStarted && !polygon) {
-        drawingStarted = true
-        guideEl.textContent = t('draw_guide_close', lang)
-      }
+    // map.on('click') is intercepted by Mapbox GL Draw — count raw DOM clicks instead
+    mapContainerEl.addEventListener('click', () => {
+      if (polygon) return
+      vertexCount++
+      if (vertexCount === 3) guideEl.textContent = t('draw_guide_close', lang)
     })
 
-    map.on('draw.create', updateBoundary)
-    map.on('draw.update', updateBoundary)
-    map.on('draw.delete', () => {
+    function resetDraw() {
       polygon = null
-      drawingStarted = false
+      vertexCount = 0
       guideEl.textContent = t('draw_guide_start', lang)
       guideEl.classList.remove('hidden')
       container.querySelector('#area-input').value = ''
       container.querySelector('#area-warning').classList.add('hidden')
       checkReady()
+    }
+
+    map.on('draw.create', updateBoundary)
+    map.on('draw.update', updateBoundary)
+    map.on('draw.delete', resetDraw)
+
+    container.querySelector('#clear-boundary-btn')?.addEventListener('click', () => {
+      draw.deleteAll()
+      draw.changeMode('draw_polygon')
+      resetDraw()
     })
 
     function updateBoundary(e) {

@@ -14,10 +14,68 @@ function cropFromName(name = '') {
   return lastWord.split('-').pop() || lastWord
 }
 
+function setupPullToRefresh(lang, onRefresh) {
+  const THRESHOLD = 72
+  let startY = 0, dy = 0, active = false, loading = false
+
+  const bar = document.createElement('div')
+  bar.className = 'ptr-bar'
+  bar.innerHTML = '<div class="ptr-spinner"></div><span class="ptr-label"></span>'
+  document.body.prepend(bar)
+  const label = bar.querySelector('.ptr-label')
+
+  const onStart = e => {
+    if (loading || window.scrollY > 5) return
+    startY = e.touches[0].clientY
+    dy = 0
+    active = true
+  }
+  const onMove = e => {
+    if (!active || loading) return
+    dy = e.touches[0].clientY - startY
+    if (dy <= 0) { active = false; return }
+    bar.style.height = Math.min(dy * 0.55, THRESHOLD * 0.7) + 'px'
+    bar.style.opacity = Math.min(dy / THRESHOLD, 1)
+    label.textContent = dy >= THRESHOLD ? t('release_to_refresh', lang) : t('pull_to_refresh', lang)
+  }
+  const onEnd = async () => {
+    if (!active) return
+    active = false
+    if (dy >= THRESHOLD) {
+      loading = true
+      bar.classList.add('ptr-loading')
+      bar.style.height = '44px'
+      label.textContent = t('refreshing', lang)
+      try { await onRefresh() } catch {}
+      bar.style.height = '0'
+      bar.style.opacity = '0'
+      bar.classList.remove('ptr-loading')
+      loading = false
+    } else {
+      bar.style.height = '0'
+      bar.style.opacity = '0'
+    }
+    dy = 0
+  }
+
+  document.addEventListener('touchstart', onStart, { passive: true })
+  document.addEventListener('touchmove', onMove, { passive: true })
+  document.addEventListener('touchend', onEnd)
+
+  return () => {
+    document.removeEventListener('touchstart', onStart)
+    document.removeEventListener('touchmove', onMove)
+    document.removeEventListener('touchend', onEnd)
+    bar.remove()
+  }
+}
+
 export async function renderHome(container, state, navigate) {
   const lang = state?.language ?? 'en'
+  let latestUserConfig = state?.userConfig
 
   function render(userConfig) {
+    latestUserConfig = userConfig
     const name = userConfig?.name ?? state?.name ?? ''
     const fields = userConfig?.fields ?? []
 
@@ -70,10 +128,16 @@ export async function renderHome(container, state, navigate) {
     container.innerHTML = `
       <div class="screen screen-home">
         <h2>${t('welcome_back', lang, { name })}</h2>
+        <p class="home-intro-strip">${t('home_intro', lang)}</p>
         <div class="fields-list">${fieldCards}</div>
         ${hasPending ? `<p class="pending-note">${t('pending_note', lang)}</p>` : ''}
         ${upgradeCard}
         <p class="teaser">${t('teaser_unlock', lang)}</p>
+        <div class="home-footer-hint">
+          <span>📶 ${t('home_offline_badge', lang)}</span>
+          <span aria-hidden="true">·</span>
+          <span>↕ ${t('pull_to_refresh', lang)}</span>
+        </div>
         <div class="cta-group">
           <button id="add-farm-btn" class="btn-primary${isAtLimit ? ' btn-at-limit' : ''}" ${hasPending ? 'disabled' : ''}>${t('add_farm', lang)}</button>
           <button id="download-app-btn" class="btn-ghost">${t('download_app_rigrow', lang)}</button>
@@ -110,7 +174,11 @@ export async function renderHome(container, state, navigate) {
       if (hasPending) return
       const sel = fields.find(f => f.id === selectedFieldId)
       if (!sel || sel.registrationType !== 'pin') return
-      await saveState({ fieldMode: null, upgradeField: { name: sel.name } })
+      await saveState({
+        fieldMode: null, upgradeField: { name: sel.name },
+        hectares: null, cropName: null, cropPrefix: null, crop: null,
+        plantingDate: null, gpsCoordsStr: null, gpsCoords: null,
+      })
       navigate('map')
     })
 
@@ -131,7 +199,11 @@ export async function renderHome(container, state, navigate) {
         overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove() })
         return
       }
-      await saveState({ fieldMode: null, upgradeField: null })
+      await saveState({
+        fieldMode: null, upgradeField: null,
+        hectares: null, cropName: null, cropPrefix: null, crop: null,
+        plantingDate: null, gpsCoordsStr: null, gpsCoords: null,
+      })
       navigate('map')
     })
 
@@ -188,26 +260,32 @@ export async function renderHome(container, state, navigate) {
     }, 10_000)
   }
 
-  if (state?.phone && navigator.onLine) {
-    fetchUserConfig(state.phone, true).then(async fresh => {
-      if (!fresh) return
-      const localFields = state?.userConfig?.fields ?? []
-      const pending = localFields.filter(f => f.pending)
-      const serverFields = fresh.fields ?? []
-      const isMatch = (s, l) =>
-        cropFromName(s.name).toLowerCase() === cropFromName(l.name).toLowerCase() &&
-        Math.abs((s.A ?? 0) - (l.A ?? 0)) < 0.15
-      // Carry registrationType from any local field when server omits it
-      const mergedServer = serverFields.map(s => {
-        if (s.registrationType) return s
-        const local = localFields.find(l => isMatch(s, l))
-        return local ? { ...s, registrationType: local.registrationType } : s
-      })
-      const stillPending = pending.filter(p => !serverFields.some(s => isMatch(s, p)))
-      fresh = { ...fresh, fields: [...mergedServer, ...stillPending] }
-      track('home_fields_refresh', { field_count: fresh.fields.length })
-      await saveState({ userConfig: fresh })
-      render(fresh)
-    }).catch(() => {})
+  async function doRefresh() {
+    if (!state?.phone || !navigator.onLine) return
+    const fresh = await fetchUserConfig(state.phone, true)
+    if (!fresh) return
+    const localFields = latestUserConfig?.fields ?? []
+    const pending = localFields.filter(f => f.pending)
+    const serverFields = fresh.fields ?? []
+    const isMatch = (s, l) =>
+      cropFromName(s.name).toLowerCase() === cropFromName(l.name).toLowerCase() &&
+      Math.abs((s.A ?? 0) - (l.A ?? 0)) < 0.15
+    const mergedServer = serverFields.map(s => {
+      if (s.registrationType) return s
+      const local = localFields.find(l => isMatch(s, l))
+      return local ? { ...s, registrationType: local.registrationType } : s
+    })
+    const stillPending = pending.filter(p => !serverFields.some(s => isMatch(s, p)))
+    const merged = { ...fresh, fields: [...mergedServer, ...stillPending] }
+    track('home_fields_refresh', { field_count: merged.fields.length })
+    await saveState({ userConfig: merged })
+    render(merged)
   }
+
+  if (state?.phone && navigator.onLine) doRefresh().catch(() => {})
+
+  const cleanupPTR = setupPullToRefresh(lang, doRefresh)
+  const ptrCheck = setInterval(() => {
+    if (!container.isConnected) { clearInterval(ptrCheck); cleanupPTR() }
+  }, 500)
 }

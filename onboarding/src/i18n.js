@@ -135,6 +135,12 @@ const strings = {
     limit_reached_title: 'Farm Limit Reached',
     limit_reached_msg: 'You have reached the maximum of 5 farms on the free plan. Upgrade to a paid service to add more.',
     limit_reached_btn: 'OK',
+    // Home — intro & hints
+    home_intro: 'Map your farms, get field-level insights, and calculate irrigation savings.',
+    home_offline_badge: 'Works offline',
+    pull_to_refresh: 'Pull down to refresh',
+    release_to_refresh: 'Release to refresh',
+    refreshing: 'Refreshing…',
     // Home — general
     teaser_unlock: 'Unlock field-level insights',
     add_farm: '+ Add a Farm',
@@ -315,6 +321,12 @@ const strings = {
     limit_reached_title: 'Kikomo cha Mashamba Kimefikiwa',
     limit_reached_msg: 'Umefika kikomo cha mashamba 5 kwenye mpango wa bure. Boresha hadi huduma ya malipo kuongeza zaidi.',
     limit_reached_btn: 'Sawa',
+    // Home — intro & hints
+    home_intro: 'Panga mashamba yako, pata maarifa ya shamba, na kokotoa akiba ya umwagiliaji.',
+    home_offline_badge: 'Inafanya kazi bila mtandao',
+    pull_to_refresh: 'Vuta chini kusasisha',
+    release_to_refresh: 'Achia kusasisha',
+    refreshing: 'Inasasisha…',
     // Home — general
     teaser_unlock: 'Fungua maarifa ya kiwango cha shamba',
     add_farm: '+ Ongeza Shamba',
@@ -495,6 +507,12 @@ const strings = {
     limit_reached_title: 'የማሳ ገደብ ደርሷል',
     limit_reached_msg: 'በነፃ ዕቅዱ ላይ ፈቀድ ያለው ከፍተኛ 5 ማሳዎች ደርሰዋል። ተጨማሪ ለማከል ወደ ሚከፈልበት አገልግሎት ያሻሽሉ።',
     limit_reached_btn: 'እሺ',
+    // Home — intro & hints
+    home_intro: 'ማሳዎዎን ይካሉ፣ የማሳ ደረጃ መረጃ ያግኙ እና የመስኖ ቁጠባ ያስሉ።',
+    home_offline_badge: 'ያለ ኢንተርኔት ይሰራል',
+    pull_to_refresh: 'ለማደስ ወደ ታች ጎትቱ',
+    release_to_refresh: 'ለማደስ ይልቀቁ',
+    refreshing: 'እየታደሰ ነው…',
     // Home — general
     teaser_unlock: 'የማሳ ደረጃ መረጃዎችን ይክፈቱ',
     add_farm: '+ እርሻ ያክሉ',
@@ -675,6 +693,12 @@ const strings = {
     limit_reached_title: 'Daangaa Lafa Qonnaa Gaheera',
     limit_reached_msg: 'Karoora bilisaa irratti lafa qonnaa 5 kan olii hin eyyamamne. Dabalataaf tajaajila kaffaltiif fooruun barbaachisaadha.',
     limit_reached_btn: 'Tole',
+    // Home — intro & hints
+    home_intro: 'Lafa qonnaa kee kaa\'i, hubannoo lafa qonnaa argadhu, fi qusannoo jallisii herregi.',
+    home_offline_badge: 'Toora interneetii malee hojjeta',
+    pull_to_refresh: 'Haaromsuuf gad-harkisi',
+    release_to_refresh: 'Haaromsuuf gadhiisi',
+    refreshing: 'Haaromsaa jira…',
     // Home — general
     teaser_unlock: 'Hubannoo sadarkaa lafa qonnaa bani',
     add_farm: '+ Qonnaa Ida\'i',

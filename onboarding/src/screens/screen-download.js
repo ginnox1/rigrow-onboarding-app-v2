@@ -1,7 +1,7 @@
 import { postDownloadView } from '../crm.js'
 import { APP_SCREENSHOTS } from '../app-screenshots.js'
 import { t } from '../i18n.js'
-import { APK_DOWNLOAD_URL } from '../config.js'
+import { APK_DOWNLOAD_URL, APP_VERSION } from '../config.js'
 
 export async function renderDownload(container, state, navigate) {
   const lang = state?.language ?? 'en'
@@ -25,7 +25,7 @@ export async function renderDownload(container, state, navigate) {
         <strong>Note:</strong> You will need the userId sent to your SMS to login.
       </div>
 
-      <a href="${APK_DOWNLOAD_URL}?src=app" class="btn-primary btn-download-apk" id="android-btn">▶ Download Android App</a>
+      <a href="${APK_DOWNLOAD_URL}?src=app" class="btn-primary btn-download-apk" id="android-btn">▶ Download Android App <span class="apk-version">${APP_VERSION}</span></a>
 
       <div class="download-requirements">
         <strong>Requirements</strong>

@@ -78,6 +78,6 @@ Plan for this.
 
 [ ! ] How to show last calculated value on the field? This perfection at this stage post pone. [This is an OVERKILL]
 
-[  ] Check if bounding string matches, before revealing data. A privacy concern!
+[ x ] on 'Add farms' button, clear all input fields in map page, to avoid accidental repetition
 
-[  ] on 'Add farms' button, clear all input fields in map page, to avoid accidental repetition
+[  ] Check if bounding string matches, before revealing data. A privacy concern!

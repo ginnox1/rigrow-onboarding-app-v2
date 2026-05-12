@@ -412,6 +412,10 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 }
 
 /* ── Download page ───────────────────────────────────────────── */
+.apk-version {
+  font-size: 0.75rem; font-weight: 400; opacity: 0.85;
+  margin-left: 6px; letter-spacing: 0.02em;
+}
 .screenshot-gallery {
   display: flex; gap: 12px; overflow-x: auto; padding: 4px 0 12px;
   scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;

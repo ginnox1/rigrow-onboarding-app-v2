@@ -22,9 +22,9 @@ export async function renderEntry(container, state, navigate) {
   container.innerHTML = `
     <div class="screen screen-entry">
       <img src="/assets/logo.png" alt="Rigrow" class="logo-img" />
-      <h2 class="entry-welcome">Welcome to Rigrow.</h2>
-      <p class="entry-subtitle">Enter your phone number to register or login.</p>
-      <p class="entry-lang-label">Choose your language</p>
+      <h2 class="entry-welcome">${t('entry_welcome', lang)}</h2>
+      <p class="entry-subtitle">${t('entry_subtitle', lang)}</p>
+      <p class="entry-lang-label">${t('entry_lang_label', lang)}</p>
       <div class="lang-toggle">
         ${LANGUAGES.map(l => `<button class="lang-btn${l.code === lang ? ' active' : ''}" data-lang="${l.code}">${l.label}</button>`).join('')}
       </div>
@@ -37,6 +37,15 @@ export async function renderEntry(container, state, navigate) {
       <div id="phone-error" class="error-text hidden"></div>
       <button id="continue-btn" class="btn-primary" disabled>${t('continue', lang)}</button>
       <button id="agent-btn" class="btn-ghost">${t('i_am_agent', lang)}</button>
+
+      <div class="entry-info">
+        <p class="entry-tagline">${t('entry_tagline', lang)}</p>
+        <ul class="entry-features">
+          <li><span class="entry-feat-icon">📍</span>${t('entry_feat_fields', lang)}</li>
+          <li><span class="entry-feat-icon">💧</span>${t('entry_feat_advice', lang)}</li>
+          <li><span class="entry-feat-icon">🤝</span>${t('entry_feat_agent', lang)}</li>
+        </ul>
+      </div>
     </div>
   `
 

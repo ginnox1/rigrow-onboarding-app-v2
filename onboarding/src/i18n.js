@@ -1,5 +1,13 @@
 const strings = {
   en: {
+    // Entry screen
+    entry_welcome: 'Welcome to Rigrow.',
+    entry_subtitle: 'Enter your phone number to register or log in.',
+    entry_lang_label: 'Choose your language',
+    entry_tagline: 'Precision irrigation advice and crop health insights — delivered directly to your phone.',
+    entry_feat_fields: 'Register your farms and map field boundaries',
+    entry_feat_advice: 'Get daily irrigation and crop health advice',
+    entry_feat_agent: 'Request support from a Rigrow field agent',
     continue: 'Continue',
     i_am_agent: 'I am an agent',
     register: 'Register',
@@ -187,6 +195,14 @@ const strings = {
     region_snnpr: 'SNNPR',
   },
   sw: {
+    // Entry screen
+    entry_welcome: 'Karibu Rigrow.',
+    entry_subtitle: 'Ingiza nambari yako ya simu ili kusajili au kuingia.',
+    entry_lang_label: 'Chagua lugha yako',
+    entry_tagline: 'Ushauri wa umwagiliaji na maarifa ya afya ya mazao — yanayotolewa moja kwa moja kwenye simu yako.',
+    entry_feat_fields: 'Sajili mashamba yako na upange mipaka ya shamba',
+    entry_feat_advice: 'Pata ushauri wa kila siku wa umwagiliaji na afya ya mazao',
+    entry_feat_agent: 'Omba msaada kutoka kwa wakala wa Rigrow',
     continue: 'Endelea',
     i_am_agent: 'Mimi ni wakala',
     register: 'Sajili',
@@ -373,6 +389,14 @@ const strings = {
     region_snnpr: 'SNNPR',
   },
   am: {
+    // Entry screen
+    entry_welcome: 'እንኳን ወደ Rigrow መጡ።',
+    entry_subtitle: 'ለመመዝገብ ወይም ለመግባት ስልክ ቁጥርዎን ያስገቡ።',
+    entry_lang_label: 'ቋንቋዎን ይምረጡ',
+    entry_tagline: 'ትክክለኛ የመስኖ ምክር እና የሰብል ጤና መረጃ — በቀጥታ ወደ ስልክዎ።',
+    entry_feat_fields: 'ማሳዎዎን ይመዝግቡ እና የማሳ ድንበር ይካሉ',
+    entry_feat_advice: 'ዕለታዊ የመስኖ እና የሰብል ጤና ምክር ያግኙ',
+    entry_feat_agent: 'ከRigrow ወኪል ድጋፍ ይጠይቁ',
     continue: 'ቀጥል',
     i_am_agent: 'እኔ ወኪል ነኝ',
     register: 'ተመዝገብ',
@@ -559,6 +583,14 @@ const strings = {
     region_snnpr: 'ደቡብ ብሔሮች ብሔረሰቦችና ሕዝቦች',
   },
   om: {
+    // Entry screen
+    entry_welcome: 'Baga Rigrow dhuftan.',
+    entry_subtitle: 'Lakkoofsa bilbila kee galchi galmoofachuuf ykn seenuuf.',
+    entry_lang_label: 'Afaan kee filadhu',
+    entry_tagline: 'Gorsa jallisii sirrii fi hubannoo fayyaa midhaanii — kallattiin bilbila keetiif.',
+    entry_feat_fields: 'Qonnaa kee galmeessi fi daangaa lafa qonnaa sarri',
+    entry_feat_advice: 'Gorsa jallisii fi fayyaa midhaanii guyyaa guyyaa argadhu',
+    entry_feat_agent: 'Gargaarsa bakka bu\'aa Rigrow gaafadhu',
     continue: 'Itti fufi',
     i_am_agent: 'Ani bakka bu\'aadha',
     register: 'Galmeessi',

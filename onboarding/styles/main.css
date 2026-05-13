@@ -120,6 +120,23 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 .entry-welcome { text-align: center; font-size: 1.25rem; font-weight: 700; color: var(--text); margin: 8px 0 4px; }
 .entry-subtitle { text-align: center; font-size: 0.9rem; color: var(--muted); margin: 0 0 20px; }
 .entry-lang-label { text-align: center; font-size: 0.78rem; color: var(--muted); margin: 0 0 6px; }
+.entry-info {
+  margin-top: 8px; padding: 16px;
+  background: var(--green-light); border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.entry-tagline {
+  font-size: 0.88rem; color: var(--text); font-weight: 500;
+  line-height: 1.55; margin-bottom: 12px; text-align: center;
+}
+.entry-features {
+  list-style: none; display: flex; flex-direction: column; gap: 10px;
+}
+.entry-features li {
+  font-size: 0.85rem; color: var(--text);
+  display: flex; align-items: flex-start; gap: 10px; line-height: 1.4;
+}
+.entry-feat-icon { flex-shrink: 0; font-size: 1rem; margin-top: 1px; }
 
 /* ── Error ───────────────────────────────────────────────────── */
 .error-text { color: var(--red); font-size: 0.85rem; }

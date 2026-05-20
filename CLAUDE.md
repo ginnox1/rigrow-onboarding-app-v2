@@ -120,8 +120,19 @@ Separate IDB database `rigrow-crm-queue`. `flushQueue` uses separate transaction
 ### PMTiles / offline maps
 - `offlineMap.js` uses raw `indexedDB` API (not the `idb` library) — must stay SW-compatible.
 - `sw-custom.js` is the custom service worker registered via VitePWA `injectManifest` strategy.
-- `screen-map.js` imports `Protocol, PMTiles` from `pmtiles` and `importPMTiles, listLocalMaps, getMapSource` from `../offlineMap.js`. Do not remove these.
+- `screen-map.js` imports `PMTiles, FileSource` from `pmtiles` and `importPMTiles, listLocalMaps, getMapSource` from `../offlineMap.js`. Also imports `@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css`. Do not remove these.
 - When `mapSource === 'local'`, the map initialises with an empty style (no Mapbox satellite request) so it works offline.
+- Tiles are served by `sw-custom.js` at `/_pmtiles/{filename}/{z}/{x}/{y}` — the service worker intercepts these HTTP requests and reads from OPFS via the pmtiles library. The old `addProtocol` approach was removed in Mapbox GL v3.22.0.
+- MapboxDraw renames all layer IDs to `{id}.cold` / `{id}.hot` via its internal `addSources()`. Use `'gl-draw-polygon-fill.cold'` (not `'gl-draw-polygon-fill'`) as the `beforeId` when inserting the raster layer.
+
+### Mapbox GL v3 control icon CSS
+- `@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css` must be imported (done in `screen-map.js`) — draw toolbar icons are background-image SVGs defined only in that stylesheet.
+- `main.css` adds `background-size: 70% auto` on `.mapboxgl-ctrl-group button .mapboxgl-ctrl-icon` — Mapbox GL v3 dropped the explicit `background-size` and the compass SVG has no intrinsic dimensions, so without this override the compass icon does not render.
+
+### `scripts/create-pmtiles.js`
+- Reads `<repo-root>/.env` at startup so `VITE_MAPBOX_TOKEN` is available without passing `--token`.
+- CLI arg parser joins consecutive non-flag tokens, so `--center 6.705304, 38.296804` (space after comma) parses correctly.
+- Use `--minzoom 12 --maxzoom 16` for farm-scale tiles (5 km radius). Skipping z5–z11 cuts file size ~90%.
 
 ### Theme system
 `data-theme` on `<html>` (`light` | `dark` | `high-contrast`). Persisted in `localStorage` under `rigrow-theme`. All UI must use CSS custom properties (`--bg`, `--surface`, `--text`, `--muted`, `--border`, `--green`, `--green-light`, `--red`), never hardcoded hex values.

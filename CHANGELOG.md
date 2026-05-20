@@ -4,6 +4,30 @@ All notable changes to the Rigrow Onboarding App.
 
 ---
 
+## [0.2.13] — 2026-05-20
+
+### Fixed — Offline map controls, draw icons, PMTiles script
+
+#### Map screen — NavigationControl on all map modes
+
+- `screen-map.js` — `NavigationControl` (zoom +/−, compass) was only added to the local-map branch. Added the same control to the online (`createMap`) branch so zoom buttons appear in both modes.
+
+#### Map screen — boundary polygon visible on local map
+
+- `screen-map.js` — raster tile layer was inserted with `beforeId: 'gl-draw-polygon-fill'` which never matched because MapboxDraw's `addSources()` renames every layer to `{id}.cold` / `{id}.hot`. Changed to `'gl-draw-polygon-fill.cold'` so the raster layer is correctly placed below draw layers and boundary outlines remain visible on the local PMTiles map.
+
+#### Map screen — draw toolbar and compass icons visible
+
+- `screen-map.js` — imported `@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css`. Without this import the polygon/trash/point icons on the draw toolbar had no `background-image` and rendered as blank white squares.
+- `main.css` — added `.mapboxgl-ctrl-group button .mapboxgl-ctrl-icon { background-size: 70% auto }`. Mapbox GL v3 removed the explicit `background-size` from `.mapboxgl-ctrl-icon`, and the compass SVG has no intrinsic `width`/`height` attributes (only `viewBox`), so without an explicit size it did not render as a background image.
+
+#### `scripts/create-pmtiles.js` — auto-load `.env` and robust arg parsing
+
+- Added inline `.env` loader at script startup: reads `<repo-root>/.env` and injects variables into `process.env` before any token check. Plain `node` does not load Vite's `.env`; without this, `VITE_MAPBOX_TOKEN` was always undefined even when set.
+- Hardened the CLI arg parser: consecutive non-flag tokens are now joined and whitespace-stripped. This allows `--center 6.705304, 38.296804` (with a space after the comma, common from copy-paste) to parse correctly instead of silently discarding the latitude.
+
+---
+
 ## [Unreleased] — 2026-04-27
 
 ### Added — GitHub data source, home screen fields, per-country pricing, map UX

@@ -30,6 +30,15 @@ import fs    from 'fs';
 import path  from 'path';
 import { fileURLToPath } from 'url';
 
+// Load .env from repo root (Vite reads it; plain `node` does not)
+try {
+  const envPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.env');
+  for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
+    const m = line.match(/^\s*([^#=\s]+)\s*=\s*(.*)$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^['"]|['"]$/g, '');
+  }
+} catch { /* no .env — rely on shell env */ }
+
 // ── Tile math ────────────────────────────────────────────────────────────────
 
 function lngToX(lng, z) {
@@ -234,8 +243,14 @@ async function downloadAll(tileList, urlTpl, jobs, headers = {}) {
 function parseArgs() {
   const a = {};
   const argv = process.argv.slice(2);
-  for (let i = 0; i < argv.length; i++)
-    if (argv[i].startsWith('--')) a[argv[i].slice(2)] = argv[++i];
+  for (let i = 0; i < argv.length; i++) {
+    if (!argv[i].startsWith('--')) continue;
+    const key = argv[i].slice(2);
+    // Collect all consecutive non-flag tokens as the value (handles spaces in coords)
+    const parts = [];
+    while (i + 1 < argv.length && !argv[i + 1].startsWith('--')) parts.push(argv[++i]);
+    a[key] = parts.join('').replace(/\s/g, '');
+  }
   return a;
 }
 

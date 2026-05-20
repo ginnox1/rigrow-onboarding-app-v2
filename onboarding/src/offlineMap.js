@@ -97,6 +97,14 @@ export async function importPMTiles(file) {
     // 3. Save metadata to IDB
     await idbPut(metadata);
 
+    // 4. Invalidate SW tile cache for this file (in case it was re-imported)
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'PMTILES_INVALIDATE',
+        filename: file.name,
+      });
+    }
+
     return metadata;
   } catch (err) {
     // Best-effort cleanup of partial OPFS file

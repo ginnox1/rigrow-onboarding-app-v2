@@ -4,8 +4,9 @@ import { createMap, attachDraw, calcHectares, hasSelfIntersection, addGreenMarke
 import { MIN_FARM_HA, COUNTRY_PRICING, COUNTRY_BBOX } from '../config.js'
 import { t } from '../i18n.js'
 import { showToast } from '../main.js'
-import { Protocol, PMTiles } from 'pmtiles'
+import { PMTiles, FileSource } from 'pmtiles'
 import { importPMTiles, listLocalMaps, getMapSource } from '../offlineMap.js'
+import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 const CROPS = ['Barley','Broccoli','Cabbage','Garlic','Kale','Lentils','Maize','Onion','Pepper','Potato','Sorghum','Sweet Potato','Teff','Tomato','Wheat','Other']
 
@@ -31,8 +32,6 @@ const MAP_CENTRES = {
   '+250': [29.8739, -1.9403],
 }
 
-let pmtilesProtocolRegistered = false
-let _localTileBlobUrl = null
 
 function centreForState(state) {
   const prefix = state?.phonePrefix ?? '+254'
@@ -142,15 +141,6 @@ export async function renderMap(container, state, navigate) {
   let localMaps = []
   try { localMaps = await listLocalMaps() } catch (_) {}
   const hasLocal = localMaps.length > 0
-
-  // Register PMTiles protocol once
-  if (!pmtilesProtocolRegistered) {
-    try {
-      const protocol = new Protocol()
-      mapboxgl.addProtocol('pmtiles', protocol.tile.bind(protocol))
-      pmtilesProtocolRegistered = true
-    } catch (_) {}
-  }
 
   // Get saved mapSource from state, default to 'online' if no local maps
   let mapSource = (hasLocal && state?.mapSource === 'local') ? 'local' : 'online'
@@ -331,21 +321,43 @@ export async function renderMap(container, state, navigate) {
       zoom: 14,
       style: { version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#d8d8d8' } }] }
     })
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right')
   } else {
     map = createMap('map-container', centre)
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right')
   }
 
-  // Load local PMTiles source if selected
+  // Load local PMTiles source if selected.
+  // Tiles are served by the service worker at /_pmtiles/{filename}/{z}/{x}/{y}.
+  // We read the header in the main thread (via FileSource) only to get bounds and zoom range.
   if (mapSource === 'local' && hasLocal) {
     map.on('load', async () => {
       try {
-        const file = await getMapSource(localMaps[0].filename)
+        const { filename } = localMaps[0]
+        const file = await getMapSource(filename)
         if (!file) { showToast('Local map file not found'); return }
-        if (_localTileBlobUrl) { URL.revokeObjectURL(_localTileBlobUrl); _localTileBlobUrl = null }
-        const blobUrl = URL.createObjectURL(file)
-        _localTileBlobUrl = blobUrl
-        map.addSource('local-tiles', { type: 'raster', url: `pmtiles://${blobUrl}`, tileSize: 256 })
-        map.addLayer({ id: 'local-tiles', type: 'raster', source: 'local-tiles' })
+
+        const archive = new PMTiles(new FileSource(file))
+        const header = await archive.getHeader()
+
+        const encodedName = encodeURIComponent(filename)
+        map.addSource('local-tiles', {
+          type: 'raster',
+          tiles: [`/_pmtiles/${encodedName}/{z}/{x}/{y}`],
+          tileSize: 256,
+          minzoom: header.minZoom,
+          maxzoom: header.maxZoom,
+          bounds: [header.minLon, header.minLat, header.maxLon, header.maxLat],
+        })
+        // Insert raster below draw layers so polygon outlines/vertices remain visible.
+        // MapboxDraw renames layer IDs to '{id}.cold' / '{id}.hot' via addSources().
+        const beforeDraw = map.getLayer('gl-draw-polygon-fill.cold') ? 'gl-draw-polygon-fill.cold' : undefined
+        map.addLayer({ id: 'local-tiles', type: 'raster', source: 'local-tiles' }, beforeDraw)
+
+        map.fitBounds(
+          [[header.minLon, header.minLat], [header.maxLon, header.maxLat]],
+          { padding: 20, maxZoom: header.maxZoom, duration: 0 }
+        )
       } catch (err) {
         console.error('Failed to load local PMTiles:', err)
         showToast('Could not load local map')

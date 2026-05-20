@@ -317,6 +317,15 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 .mapboxgl-canvas { cursor: crosshair; }
 .mapboxgl-canvas:active { cursor: grab; }
 
+/* ── Mapbox / Draw control icon fix ─────────────────────────── */
+/* Mapbox GL v3 omits background-size on ctrl-icon; SVGs without explicit
+   width/height need an explicit size or they won't render as backgrounds. */
+.mapboxgl-ctrl-group button .mapboxgl-ctrl-icon {
+  background-size: 70% auto;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
 /* ── Loading spinner ─────────────────────────────────────────── */
 .btn-loading { position: relative; color: transparent !important; pointer-events: none; opacity: 0.8; }
 .btn-loading::after {

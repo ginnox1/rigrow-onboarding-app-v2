@@ -81,9 +81,7 @@ export async function importPMTiles(file) {
     const mapsDir = await getMapsDir(true);
     const fileHandle = await mapsDir.getFileHandle(file.name, { create: true });
     const writable = await fileHandle.createWritable();
-    const buffer = await file.arrayBuffer();
-    await writable.write(buffer);
-    await writable.close();
+    await file.stream().pipeTo(writable);
 
     // 2. Build metadata
     const filenameWithoutExt = file.name.replace(/\.[^.]+$/, '');

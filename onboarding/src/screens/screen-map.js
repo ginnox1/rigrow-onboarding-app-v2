@@ -4,7 +4,7 @@ import { createMap, attachDraw, calcHectares, hasSelfIntersection, addGreenMarke
 import { MIN_FARM_HA, COUNTRY_PRICING, COUNTRY_BBOX } from '../config.js'
 import { t } from '../i18n.js'
 import { showToast } from '../main.js'
-import { PMTiles, FileSource } from 'pmtiles'
+import { FileSource, bytesToHeader } from 'pmtiles'
 import { importPMTiles, listLocalMaps, getMapSource } from '../offlineMap.js'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
@@ -337,8 +337,13 @@ export async function renderMap(container, state, navigate) {
         const file = await getMapSource(filename)
         if (!file) { showToast('Local map file not found'); return }
 
-        const archive = new PMTiles(new FileSource(file))
-        const header = await archive.getHeader()
+        // Read the 127-byte fixed header directly. The pmtiles SharedPromiseCache
+        // only fetches 16 KB on first access and slices the root directory from
+        // that window — silently truncating any root dir > ~16 KB (getHeader fails
+        // with "Expected varint not more than 10 bytes"). Reading 127 bytes directly
+        // bypasses that layer; bounds/zoom is all we need here (tiles come from SW).
+        const { data: headerBytes } = await (new FileSource(file)).getBytes(0, 127)
+        const header = bytesToHeader(headerBytes)
 
         const encodedName = encodeURIComponent(filename)
         map.addSource('local-tiles', {

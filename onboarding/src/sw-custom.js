@@ -1,6 +1,20 @@
 import { precacheAndRoute } from 'workbox-precaching'
 import { PMTiles, FileSource } from 'pmtiles'
 
+// pmtiles SharedPromiseCache reads exactly 16 384 bytes on first access and slices
+// the root directory from that window.  Any root dir larger than ~16 KB is silently
+// truncated, producing the "Expected varint not more than 10 bytes" parse error.
+// LargeFileSource extends the initial read to 64 KB so archives with up to ~65 KB
+// root directories (≈ 12 000+ tile entries) parse correctly.
+class LargeFileSource extends FileSource {
+  async getBytes(offset, length) {
+    if (offset === 0 && length === 16384) {
+      length = Math.min(65536, this.file.size)
+    }
+    return super.getBytes(offset, length)
+  }
+}
+
 precacheAndRoute(self.__WB_MANIFEST)
 
 // Take over immediately so tile serving is active on first load
@@ -18,7 +32,7 @@ async function getArchive(filename) {
     const mapsDir = await root.getDirectoryHandle('maps')
     const fileHandle = await mapsDir.getFileHandle(filename)
     const file = await fileHandle.getFile()
-    _archives.set(filename, new PMTiles(new FileSource(file)))
+    _archives.set(filename, new PMTiles(new LargeFileSource(file)))
   }
   return _archives.get(filename)
 }
@@ -84,8 +98,7 @@ async function handleShareTarget(request) {
     const mapsDir = await root.getDirectoryHandle('maps', { create: true })
     const fileHandle = await mapsDir.getFileHandle(file.name, { create: true })
     const writable = await fileHandle.createWritable()
-    await writable.write(await file.arrayBuffer())
-    await writable.close()
+    await file.stream().pipeTo(writable)
 
     // Save metadata to IDB
     const filename = file.name

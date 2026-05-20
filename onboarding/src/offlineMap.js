@@ -124,7 +124,8 @@ export async function importPMTiles(file) {
  */
 export async function listLocalMaps() {
   try {
-    return await idbGetAll();
+    const maps = await idbGetAll();
+    return maps.sort((a, b) => (b.importedAt ?? '').localeCompare(a.importedAt ?? ''));
   } catch {
     return [];
   }

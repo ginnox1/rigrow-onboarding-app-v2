@@ -10,7 +10,7 @@
  *   node scripts/create-pmtiles.js --bbox w,s,e,n  --out tiles/region.pmtiles
  *
  * Options:
- *   --center   lng,lat            region centre (decimal degrees)
+ *   --center   lat,lng            region centre — Google Maps order (decimal degrees)
  *   --radius   km                 radius → square bbox
  *   --bbox     west,south,east,north
  *   --out      output .pmtiles path  (default: output.pmtiles)
@@ -21,6 +21,9 @@
  *   --header   "Name: value"  (e.g. "Authorization: Bearer <token>")
  *   --jobs     parallel downloads  (default: 8)
  *
+ * NOTE: --center uses lat,lng order (Google Maps convention) — NOT lng,lat
+ * NOTE: avoid spaces in coordinates: 7.142152,38.51402 not "7.142152, 38.51402"
+ * NOTE: Use eox for copernicus/sentinel 2
  * NOTE: Check your tile provider's Terms of Service before caching tiles offline.
  */
 
@@ -290,7 +293,7 @@ async function main() {
   if (a.bbox) {
     bbox = a.bbox.split(',').map(Number);
   } else if (a.center && a.radius) {
-    const [lng, lat] = a.center.split(',').map(Number);
+    const [lat, lng] = a.center.split(',').map(Number); // Google Maps order: lat,lng
     bbox = centerRadiusToBbox(lng, lat, parseFloat(a.radius));
   } else {
     console.error([

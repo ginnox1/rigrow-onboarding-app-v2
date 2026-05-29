@@ -61,6 +61,46 @@ async function serveTile(filename, z, x, y) {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url)
 
+  // Intercept APK download requests
+  if (url.pathname === '/apk-download/RigrowMobileApp.apk') {
+    event.respondWith(
+      fetch(event.request).then(response => {
+        if (response.ok) return response
+
+        // If 404 or other error, serve professional maintenance page
+        return new Response(
+          `<!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Rigrow - Maintenance</title>
+            <link rel="stylesheet" href="/styles/main.css">
+            <style>
+              body { display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+              .container { max-width: 400px; width: 90%; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="maintenance-notice">
+                <div class="maintenance-icon">🛠️</div>
+                <h3>App Update in Progress</h3>
+                <p>The Android APK is currently unavailable due to scheduled maintenance. We are working to get it back online as quickly as possible.</p>
+                <div class="maintenance-footer">Please check back soon!</div>
+              </div>
+            </div>
+          </body>
+          </html>`,
+          {
+            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+          }
+        )
+      })
+    )
+    return
+  }
+
   // PMTiles tile requests: /_pmtiles/{filename}/{z}/{x}/{y}
   const tileMatch = url.pathname.match(/^\/_pmtiles\/([^/]+)\/(\d+)\/(\d+)\/(\d+)$/)
   if (tileMatch) {

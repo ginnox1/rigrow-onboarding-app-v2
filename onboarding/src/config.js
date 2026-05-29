@@ -13,7 +13,7 @@ export const CRM_WEBHOOK_URL =
   import.meta.env.VITE_CRM_WEBHOOK_URL ?? 'http://localhost:3001/api/v1/crm/lead'
 
 export const MAPBOX_TOKEN    = import.meta.env.VITE_MAPBOX_TOKEN ?? ''
-export const APK_DOWNLOAD_URL = import.meta.env.VITE_APK_DOWNLOAD_URL ?? '/apk-dowbload/RigrowMobileApp.apk'
+export const APK_DOWNLOAD_URL = import.meta.env.VITE_APK_DOWNLOAD_URL ?? '/apk-download/RigrowMobileApp.apk'
 export const APP_VERSION      = 'v1.9.0'
 
 export const COUNTRY_PRICING = {

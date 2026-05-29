@@ -438,6 +438,7 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 }
 
 /* ── Download page ───────────────────────────────────────────── */
+
 .apk-version {
   font-size: 0.75rem; font-weight: 400; opacity: 0.85;
   margin-left: 6px; letter-spacing: 0.02em;
@@ -465,3 +466,13 @@ label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; colo
 .download-requirements ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .download-requirements li::before { content: '✓ '; color: var(--green); font-weight: 700; }
 .download-requirements li { font-size: 0.9rem; color: var(--muted); }
+
+.maintenance-notice {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.maintenance-icon { font-size: 2.5rem; margin-bottom: 4px; }
+.maintenance-notice h3 { color: var(--text); font-size: 1.1rem; }
+.maintenance-notice p { color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+.maintenance-footer { font-size: 0.85rem; font-weight: 600; color: var(--green); margin-top: 8px; }

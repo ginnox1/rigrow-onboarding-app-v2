@@ -51,6 +51,8 @@ onboarding/public/
   docs/                — local dev fallback JSON files (user_registry, agent_registry, userId.json)
   assets/              — logo.png, favicon, etc.
   app-screenshots/     — *.jpg screenshots for the download screen gallery
+  apk-download/        — APK binary + version.json
+  404.html             — custom 404 handling (includes APK maintenance fallback)
 
 vite.config.js         — root: 'onboarding', envDir: '..', injectManifest PWA strategy
 backend/src/index.js   — Express CRM relay (local dev only, port 3001, Node ≥18)
@@ -183,7 +185,7 @@ npm run dev:backend  # port 3001 (needs backend/.env)
 
 ---
 
-## Open items (as of 2026-04-21)
+## Open items (as of 2026-05-29)
 
 - Vercel deploy + end-to-end prod verification
 - GAS script redeploy (APK download view event added)
@@ -194,6 +196,7 @@ npm run dev:backend  # port 3001 (needs backend/.env)
 - Kenya county dropdown (47 counties — text input for now)
 - SW/AM/OM i18n translations (empty objects in i18n.js)
 - Comprehensive test suite (see PRD section 11-B checklist)
+- Refine APK analytics: change from page-view trigger to actual click trigger
 
 ---
 
